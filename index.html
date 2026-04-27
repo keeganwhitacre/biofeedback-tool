@@ -7,9 +7,6 @@
   <meta name="theme-color" content="#0a0a0c">
   <link rel="manifest" href="manifest.json">
   <style>
-    /* ============================================================
-       DESIGN TOKENS & BASE STYLES
-       ============================================================ */
     :root {
       --bg-dark: #09090b;
       --bg-card: #18181b;
@@ -17,60 +14,31 @@
       --fg-primary: #f4f4f5;
       --fg-secondary: #a1a1aa;
       --border: #27272a;
-      
       --accent-main: #3b82f6;
-      --accent-inhale: #60a5fa; 
-      --accent-exhale: #a78bfa; 
-      
-      --coh-high: #34d399; /* Green */
-      --coh-med: #fbbf24;  /* Yellow */
-      --coh-low: #f87171;  /* Red */
-      
+      --accent-inhale: #60a5fa;
+      --accent-exhale: #a78bfa;
+      --coh-high: #34d399;
+      --coh-med: #fbbf24;
+      --coh-low: #f87171;
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      
       --safe-top: env(safe-area-inset-top, 20px);
       --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body {
-      background-color: var(--bg-dark);
-      color: var(--fg-primary);
-      font-family: var(--font-sans);
-      overflow: hidden;
-      touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
-      height: 100%;
-      width: 100%;
+      background-color: var(--bg-dark); color: var(--fg-primary);
+      font-family: var(--font-sans); overflow: hidden;
+      touch-action: manipulation; user-select: none; -webkit-user-select: none;
+      height: 100%; width: 100%;
     }
+    #hidden-stage { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
 
-    /* Hidden technical elements */
-    #hidden-stage {
-      position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none;
-    }
+    #app-container { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
 
-    /* ============================================================
-       LAYOUT & COMPONENTS
-       ============================================================ */
-    #app-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding-top: var(--safe-top);
-      padding-bottom: var(--safe-bottom);
-    }
-
-    /* TOP NAV */
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 20px; flex-shrink: 0;
-    }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; flex-shrink: 0; }
     .brand { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
     .brand span { color: var(--accent-main); }
-    
     .header-actions { display: flex; gap: 8px; }
     .btn-icon {
       background: var(--bg-card); border: 1px solid var(--border); color: var(--fg-secondary);
@@ -79,74 +47,60 @@
     }
     .btn-icon:hover, .btn-icon.active { background: var(--fg-primary); color: var(--bg-dark); }
 
-    /* SIGNAL QUALITY & RAW WAVEFORM CARD */
     #signal-card {
       margin: 0 20px; background: var(--bg-card); border-radius: 16px;
-      border: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 8px;
+      border: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
     }
-    .signal-header {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary);
-    }
+    .signal-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); }
     .signal-status-group { display: flex; align-items: center; gap: 6px; }
     .signal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
     .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 8px var(--coh-high); }
-    
     #wave-wrapper { width: 100%; height: 40px; position: relative; }
     #wave-canvas { width: 100%; height: 100%; display: block; }
-    #beat-flash {
-      position: absolute; top: 0; bottom: 0; right: 0; width: 2px;
-      background: var(--accent-main); opacity: 0; transition: opacity 0.1s ease-out;
-    }
+    #beat-flash { position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--accent-main); opacity: 0; transition: opacity 0.1s ease-out; }
     #beat-flash.flash { opacity: 1; }
 
-    /* MAIN STAGE (PACER) */
-    #main-stage {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-    }
-
-    #pacer-container {
-      position: relative; width: 220px; height: 220px;
-      display: flex; align-items: center; justify-content: center;
-    }
+    #main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    #pacer-container { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
     #pacer-ring {
       position: absolute; width: 160px; height: 160px; border-radius: 50%;
-      border: 3px solid var(--border);
-      box-shadow: 0 0 0px rgba(0,0,0,0);
-      transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease;
-      will-change: transform;
+      border: 3px solid var(--border); box-shadow: 0 0 0px rgba(0,0,0,0);
+      transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease; will-change: transform;
     }
-
     #pacer-content { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    #live-bpm {
-      font-size: 64px; font-weight: 200; line-height: 1; font-family: var(--font-mono); letter-spacing: -2px;
-      transition: opacity 0.3s; color: var(--fg-primary);
-    }
+    #live-bpm { font-size: 64px; font-weight: 200; line-height: 1; font-family: var(--font-mono); letter-spacing: -2px; transition: opacity 0.3s; color: var(--fg-primary); }
     #live-bpm.dim { opacity: 0.3; }
-    #pacer-instruction {
-      font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
-      color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease;
-    }
+    #pacer-instruction { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease; }
 
-    /* COHERENCE GAUGE */
-    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px;}
+    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px; }
     #coherence-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
     #coherence-bar-bg { width: 100%; height: 4px; border-radius: 2px; background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; }
     #coherence-bar-fill { height: 100%; width: 50%; border-radius: 2px; background: var(--coh-med); transition: width 0.3s ease, background-color 0.5s ease; }
 
-    /* TACHOGRAM CHART */
-    #tachogram-section {
-      flex-shrink: 0; height: 120px; margin: 0 20px 20px; position: relative;
-      background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 12px;
+    /* CHART SECTION */
+    #chart-section {
+      flex-shrink: 0; height: 130px; margin: 0 20px 12px; position: relative;
+      background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); position: absolute; top: 12px; left: 16px; z-index: 2;}
-    #tach-canvas { width: 100%; height: 100%; display: block; }
+    .chart-tab-bar { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .chart-tab {
+      flex: 1; padding: 7px 0; font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--fg-secondary); cursor: pointer; background: none;
+      border: none; transition: color 0.2s, background 0.2s;
+    }
+    .chart-tab.active { color: var(--accent-main); background: rgba(59,130,246,0.06); }
+    .chart-panel { flex: 1; position: relative; display: none; padding: 8px 12px; }
+    .chart-panel.active { display: block; }
+    .chart-panel canvas { width: 100%; height: 100%; display: block; }
+    #pc-sd-readout {
+      position: absolute; top: 8px; right: 10px; font-size: 10px; font-family: var(--font-mono);
+      color: var(--fg-secondary); line-height: 1.6; text-align: right; white-space: pre;
+    }
 
-    /* BOTTOM CONTROLS */
-    #controls { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
-    .status-row { display: flex; justify-content: center; align-items: center; font-size: 14px; font-family: var(--font-mono); color: var(--fg-secondary); }
-    
+    #controls { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: var(--font-mono); color: var(--fg-secondary); }
+    .status-tip { font-size: 11px; color: var(--fg-secondary); opacity: 0.6; }
     #btn-main {
       width: 100%; height: 54px; border-radius: 27px; border: none;
       background: var(--fg-primary); color: var(--bg-dark);
@@ -157,84 +111,100 @@
     #btn-main:active { transform: scale(0.97); }
     #btn-main.active { background: var(--bg-card); color: var(--coh-low); border: 1px solid var(--border); }
 
-    /* MODALS */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(9,9,11,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100;
+      position: fixed; inset: 0; background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100;
       display: flex; align-items: flex-end; justify-content: center;
       opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     }
     .modal-backdrop.show { opacity: 1; pointer-events: auto; }
-    
     .modal-card {
       background: var(--bg-card); width: 100%; border-radius: 24px 24px 0 0;
       padding: 24px 20px calc(20px + var(--safe-bottom)); border-top: 1px solid var(--border);
       transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto; max-height: 90vh; overflow-y: auto;
     }
     .modal-backdrop.show .modal-card { transform: translateY(0); }
-
     .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 24px; color: var(--fg-primary); text-align: center; }
-    
     .setting-group { margin-bottom: 24px; }
     .setting-label { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; color: var(--fg-secondary); }
     .setting-val { font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600; }
     input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
     input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--border); border-radius: 2px; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--fg-primary); margin-top: -8px; cursor: pointer; }
-    
     .btn-block { width: 100%; padding: 14px; border-radius: 16px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
     .btn-secondary { background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); }
     .btn-primary { background: var(--fg-primary); color: var(--bg-dark); }
-
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
     .stat-box { background: var(--bg-dark); border: 1px solid var(--border); padding: 16px 12px; border-radius: 12px; text-align: center; }
     .stat-val { font-size: 24px; font-weight: 300; font-family: var(--font-mono); color: var(--fg-primary); margin-bottom: 4px; }
-    .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600;}
+    .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
     .stat-highlight { color: var(--coh-high); }
 
-    /* History & Baseline Styles */
-    .history-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .history-card { background: var(--bg-dark); border: 1px solid var(--border); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;}
-    .hc-left { display: flex; flex-direction: column; gap: 4px; }
+    .history-list { max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .history-card { background: var(--bg-dark); border: 1px solid var(--border); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .hc-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
     .hc-date { font-size: 11px; color: var(--fg-secondary); }
     .hc-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
-    .hc-right { display: flex; gap: 12px; text-align: right; }
+    .hc-right { display: flex; gap: 12px; text-align: right; flex-shrink: 0; }
     .hc-stat { display: flex; flex-direction: column; }
-    .hc-stat-val { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600;}
+    .hc-stat-val { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600; }
     .hc-stat-lbl { font-size: 9px; text-transform: uppercase; color: var(--fg-secondary); }
-    
-    #baseline-overlay { position: absolute; inset: 0; background: var(--bg-card); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; border-radius: 50%;}
-    #baseline-overlay.active { opacity: 1; pointer-events: auto; }
-    .baseline-text { font-size: 14px; color: var(--fg-secondary); text-align: center; margin-top: 16px; font-weight: 600;}
 
+    #baseline-overlay {
+      position: absolute; inset: 0; background: var(--bg-card); z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s; border-radius: 50%;
+    }
+    #baseline-overlay.active { opacity: 1; pointer-events: auto; }
+    .baseline-text { font-size: 14px; color: var(--fg-secondary); text-align: center; margin-top: 16px; font-weight: 600; }
+
+    /* RF FINDER */
+    #rf-progress-bar-bg { width: 100%; height: 6px; border-radius: 3px; background: var(--border); margin: 16px 0; overflow: hidden; }
+    #rf-progress-bar-fill { height: 100%; border-radius: 3px; background: var(--accent-main); width: 0%; transition: width 0.5s ease; }
+    #rf-step-display { display: flex; justify-content: space-around; margin-bottom: 16px; }
+    .rf-step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .rf-step-bpm { font-size: 13px; font-family: var(--font-mono); color: var(--fg-secondary); }
+    .rf-step-bar-bg { width: 32px; height: 48px; background: var(--border); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; }
+    .rf-step-bar-fill { width: 100%; background: var(--accent-main); border-radius: 4px; transition: height 0.4s ease; height: 0%; }
+    .rf-step-item.current .rf-step-bpm { color: var(--accent-main); font-weight: 700; }
+    .rf-step-item.winner .rf-step-bpm { color: var(--coh-high); font-weight: 700; }
+    .rf-step-item.winner .rf-step-bar-fill { background: var(--coh-high); }
+    #rf-status-text { font-size: 14px; color: var(--fg-secondary); text-align: center; min-height: 44px; line-height: 1.5; }
+    #rf-result-box {
+      background: var(--bg-dark); border: 1px solid var(--coh-high); border-radius: 12px;
+      padding: 16px; text-align: center; display: none; margin-bottom: 16px;
+    }
+    #rf-result-val { font-size: 32px; font-weight: 200; font-family: var(--font-mono); color: var(--coh-high); }
+    #rf-result-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); margin-top: 4px; }
+
+    #rf-saved-badge {
+      display: none; align-items: center; gap: 6px; padding: 8px 12px;
+      background: rgba(52,211,153,0.1); border: 1px solid var(--coh-high);
+      border-radius: 10px; margin-bottom: 16px; font-size: 12px; color: var(--coh-high); font-weight: 600;
+    }
+    #rf-saved-badge.show { display: flex; }
   </style>
 </head>
 <body>
-
-  <!-- HIDDEN STAGE FOR CAMERA ENGINE -->
   <div id="hidden-stage">
     <video id="video-feed" playsinline muted></video>
     <canvas id="sampling-canvas"></canvas>
   </div>
 
   <div id="app-container">
-    
     <header>
       <div class="brand">KW <span>Biofeedback</span></div>
       <div class="header-actions">
-        <!-- History Button -->
         <button class="btn-icon" id="btn-history" aria-label="History">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </button>
-        <!-- Audio Toggle Button -->
         <button class="btn-icon" id="btn-audio" aria-label="Toggle Audio Cues">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path id="audio-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07 M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
         </button>
-        <!-- Settings Button -->
         <button class="btn-icon" id="btn-settings" aria-label="Settings">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
@@ -244,7 +214,6 @@
       </div>
     </header>
 
-    <!-- SIGNAL QUALITY & RAW WAVEFORM -->
     <div id="signal-card">
       <div class="signal-header">
         <div class="signal-status-group">
@@ -259,7 +228,6 @@
       </div>
     </div>
 
-    <!-- MAIN PACER STAGE -->
     <div id="main-stage">
       <div id="pacer-container">
         <div id="pacer-ring"></div>
@@ -267,45 +235,51 @@
           <div id="live-bpm" class="dim">--</div>
           <div id="pacer-instruction">Ready</div>
         </div>
-        <!-- Baseline Overlay -->
         <div id="baseline-overlay">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           <div class="baseline-text">Breathe naturally.<br>Establishing baseline...</div>
         </div>
       </div>
-      
       <div id="coherence-wrapper">
-        <div id="coherence-label">Coherence Score</div>
-        <div id="coherence-bar-bg">
-          <div id="coherence-bar-fill"></div>
-        </div>
+        <div id="coherence-label">Coherence</div>
+        <div id="coherence-bar-bg"><div id="coherence-bar-fill"></div></div>
       </div>
     </div>
 
-    <!-- TACHOGRAM CHART -->
-    <div id="tachogram-section">
-      <div class="section-label">IBI Tachogram</div>
-      <canvas id="tach-canvas"></canvas>
+    <div id="chart-section">
+      <div class="chart-tab-bar">
+        <button class="chart-tab active" id="tab-tach">IBI Tachogram</button>
+        <button class="chart-tab" id="tab-poincare">Poincaré Plot</button>
+      </div>
+      <div class="chart-panel active" id="panel-tach">
+        <canvas id="tach-canvas"></canvas>
+      </div>
+      <div class="chart-panel" id="panel-poincare">
+        <canvas id="poincare-canvas"></canvas>
+        <div id="pc-sd-readout">SD1: --&#10;SD2: --</div>
+      </div>
     </div>
 
-    <!-- CONTROLS -->
     <div id="controls">
       <div class="status-row">
         <span id="session-time">00:00</span>
+        <span class="status-tip" id="training-tip">Target: 20 min/day</span>
       </div>
       <button id="btn-main">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
         Begin Training Session
       </button>
     </div>
-
   </div>
 
   <!-- SETTINGS MODAL -->
   <div class="modal-backdrop" id="modal-settings">
-    <div class="modal-card">
+    <div class="modal-card" id="modal-settings-card">
       <div class="modal-header">Training Settings</div>
-      
+      <div id="rf-saved-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="rf-badge-text">RF: 6.0 BPM saved</span>
+      </div>
       <div class="setting-group">
         <div class="setting-label">
           <span>Breathing Protocol</span>
@@ -318,27 +292,41 @@
           <option value="coherence">Coherence (5.5 BPM)</option>
         </select>
       </div>
-
       <div class="setting-group" id="group-bpm">
         <div class="setting-label">
           <span>Resonant Frequency</span>
           <span class="setting-val" id="val-bpm">6.0 breaths/min</span>
         </div>
-        <input type="range" id="slider-bpm" min="4.0" max="8.0" step="0.1" value="6.0">
+        <input type="range" id="slider-bpm" min="4.5" max="6.5" step="0.5" value="6.0">
       </div>
-      
-      <button class="btn-block btn-secondary" id="btn-run-baseline" style="border-color: var(--accent-main); color: var(--accent-main);">Run 2-Min Baseline Assessment</button>
+      <button class="btn-block btn-secondary" id="btn-find-rf" style="border-color: var(--accent-main); color: var(--accent-main);">Find My Resonant Frequency</button>
+      <button class="btn-block btn-secondary" id="btn-run-baseline">Run 2-Min Baseline Assessment</button>
       <button class="btn-block btn-primary" id="btn-close-settings">Done</button>
+    </div>
+  </div>
+
+  <!-- RF FINDER MODAL -->
+  <div class="modal-backdrop" id="modal-rf">
+    <div class="modal-card" id="modal-rf-card">
+      <div class="modal-header">Resonant Frequency Finder</div>
+      <div id="rf-step-display"></div>
+      <div id="rf-progress-bar-bg"><div id="rf-progress-bar-fill"></div></div>
+      <p id="rf-status-text">Place your finger over the camera lens and press Start.</p>
+      <div id="rf-result-box">
+        <div id="rf-result-val">6.0</div>
+        <div id="rf-result-label">BPM — Your Resonant Frequency</div>
+        <div style="font-size:11px; color:var(--fg-secondary); margin-top:8px;">Largest IBI amplitude at this rate. Applied automatically.</div>
+      </div>
+      <button class="btn-block btn-primary" id="btn-rf-action">Start Assessment</button>
+      <button class="btn-block btn-secondary" id="btn-rf-cancel">Cancel</button>
     </div>
   </div>
 
   <!-- HISTORY MODAL -->
   <div class="modal-backdrop" id="modal-history">
-    <div class="modal-card">
+    <div class="modal-card" id="modal-history-card">
       <div class="modal-header">Session History</div>
-      <div id="history-list" class="history-list">
-        <!-- History cards injected here -->
-      </div>
+      <div id="history-list" class="history-list"></div>
       <button class="btn-block btn-secondary" id="btn-export-history">Export History (CSV)</button>
       <button class="btn-block btn-primary" id="btn-close-history">Close</button>
     </div>
@@ -346,24 +334,33 @@
 
   <!-- SUMMARY MODAL -->
   <div class="modal-backdrop" id="modal-summary">
-    <div class="modal-card">
+    <div class="modal-card" id="modal-summary-card">
       <div class="modal-header">Session Complete</div>
       <div class="stat-grid">
         <div class="stat-box">
           <div class="stat-val stat-highlight" id="sum-rmssd">--</div>
-          <div class="stat-lbl">Avg RMSSD (ms)</div>
+          <div class="stat-lbl">RMSSD (ms)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="sum-sdnn">--</div>
+          <div class="stat-lbl">SDNN (ms)</div>
         </div>
         <div class="stat-box">
           <div class="stat-val" id="sum-coherence">--%</div>
-          <div class="stat-lbl">Coherence Score</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-val" id="sum-start-bpm">--</div>
-          <div class="stat-lbl">Starting BPM</div>
+          <div class="stat-lbl">Coherence</div>
         </div>
         <div class="stat-box">
           <div class="stat-val" id="sum-end-bpm">--</div>
-          <div class="stat-lbl">Ending BPM</div>
+          <div class="stat-lbl">Avg BPM</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-dark); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:16px; display:flex; align-items:center; gap:16px;">
+        <canvas id="summary-poincare" width="80" height="80" style="flex-shrink:0;"></canvas>
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--fg-secondary); font-weight:600; margin-bottom:6px;">Poincaré</div>
+          <div style="font-size:13px; font-family:var(--font-mono); color:var(--fg-primary);">SD1 <span id="sum-sd1" style="color:var(--accent-inhale)">--</span> ms</div>
+          <div style="font-size:13px; font-family:var(--font-mono); color:var(--fg-primary); margin-top:2px;">SD2 <span id="sum-sd2" style="color:var(--accent-exhale)">--</span> ms</div>
+          <div style="font-size:10px; color:var(--fg-secondary); margin-top:6px; line-height:1.4;">SD1 = short-term variability<br>SD2 = long-term variability</div>
         </div>
       </div>
       <button class="btn-block btn-primary" id="btn-export-csv">Export Session Data (CSV)</button>
@@ -371,650 +368,700 @@
     </div>
   </div>
 
-  <!-- IMPORT CORE VIA SCRIPT TAG -->
   <script src="epat-core.js"></script>
-
-  <!-- ============================================================
-       BIOFEEDBACK APPLICATION LOGIC
-       ============================================================ -->
   <script>
-    // ------------------------------------------------------------------
-    // PWA REGISTRATION
-    // ------------------------------------------------------------------
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg failed:', err));
-      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
     }
 
-    // ------------------------------------------------------------------
-    // INIT CORE
-    // ------------------------------------------------------------------
     const { WakeLockCtrl, BeatDetector } = window.ePATCore;
 
-    // UI Elements
+    // ----------------------------------------------------------------
+    // UI REFS
+    // ----------------------------------------------------------------
     const ui = {
-      pacerRing: document.getElementById('pacer-ring'),
-      pacerText: document.getElementById('pacer-instruction'),
-      liveBpm: document.getElementById('live-bpm'),
-      fingerDot: document.getElementById('finger-dot'),
-      fingerText: document.getElementById('finger-text'),
-      sqiText: document.getElementById('sqi-text'),
-      btnMain: document.getElementById('btn-main'),
-      sessionTime: document.getElementById('session-time'),
-      cohBar: document.getElementById('coherence-bar-fill'),
-      
-      waveCanvas: document.getElementById('wave-canvas'),
-      beatFlash: document.getElementById('beat-flash'),
-      tachCanvas: document.getElementById('tach-canvas'),
+      pacerRing:       document.getElementById('pacer-ring'),
+      pacerText:       document.getElementById('pacer-instruction'),
+      liveBpm:         document.getElementById('live-bpm'),
+      fingerDot:       document.getElementById('finger-dot'),
+      fingerText:      document.getElementById('finger-text'),
+      sqiText:         document.getElementById('sqi-text'),
+      btnMain:         document.getElementById('btn-main'),
+      sessionTime:     document.getElementById('session-time'),
+      trainingTip:     document.getElementById('training-tip'),
+      cohBar:          document.getElementById('coherence-bar-fill'),
+      waveCanvas:      document.getElementById('wave-canvas'),
+      beatFlash:       document.getElementById('beat-flash'),
+      tachCanvas:      document.getElementById('tach-canvas'),
+      poincareCanvas:  document.getElementById('poincare-canvas'),
+      pcSdReadout:     document.getElementById('pc-sd-readout'),
       baselineOverlay: document.getElementById('baseline-overlay'),
-      
-      btnHistory: document.getElementById('btn-history'),
-      modalHistory: document.getElementById('modal-history'),
+      tabTach:         document.getElementById('tab-tach'),
+      tabPoincare:     document.getElementById('tab-poincare'),
+      panelTach:       document.getElementById('panel-tach'),
+      panelPoincare:   document.getElementById('panel-poincare'),
+      btnHistory:      document.getElementById('btn-history'),
+      modalHistory:    document.getElementById('modal-history'),
       btnCloseHistory: document.getElementById('btn-close-history'),
-      btnExportHistory: document.getElementById('btn-export-history'),
-      historyList: document.getElementById('history-list'),
-
-      btnAudio: document.getElementById('btn-audio'),
-      audioWaves: document.getElementById('audio-waves'),
-
-      btnSettings: document.getElementById('btn-settings'),
-      modalSettings: document.getElementById('modal-settings'),
-      btnCloseSettings: document.getElementById('btn-close-settings'),
-      btnRunBaseline: document.getElementById('btn-run-baseline'),
-      selectProtocol: document.getElementById('select-protocol'),
-      groupBpm: document.getElementById('group-bpm'),
-      sliderBpm: document.getElementById('slider-bpm'),
-      valBpm: document.getElementById('val-bpm'),
-      
-      modalSummary: document.getElementById('modal-summary'),
+      btnExportHistory:document.getElementById('btn-export-history'),
+      historyList:     document.getElementById('history-list'),
+      btnAudio:        document.getElementById('btn-audio'),
+      audioWaves:      document.getElementById('audio-waves'),
+      btnSettings:     document.getElementById('btn-settings'),
+      modalSettings:   document.getElementById('modal-settings'),
+      btnCloseSettings:document.getElementById('btn-close-settings'),
+      btnRunBaseline:  document.getElementById('btn-run-baseline'),
+      btnFindRf:       document.getElementById('btn-find-rf'),
+      rfSavedBadge:    document.getElementById('rf-saved-badge'),
+      rfBadgeText:     document.getElementById('rf-badge-text'),
+      selectProtocol:  document.getElementById('select-protocol'),
+      groupBpm:        document.getElementById('group-bpm'),
+      sliderBpm:       document.getElementById('slider-bpm'),
+      valBpm:          document.getElementById('val-bpm'),
+      valProtocol:     document.getElementById('val-protocol'),
+      modalRf:         document.getElementById('modal-rf'),
+      rfStepDisplay:   document.getElementById('rf-step-display'),
+      rfProgressFill:  document.getElementById('rf-progress-bar-fill'),
+      rfStatusText:    document.getElementById('rf-status-text'),
+      rfResultBox:     document.getElementById('rf-result-box'),
+      rfResultVal:     document.getElementById('rf-result-val'),
+      btnRfAction:     document.getElementById('btn-rf-action'),
+      btnRfCancel:     document.getElementById('btn-rf-cancel'),
+      modalSummary:    document.getElementById('modal-summary'),
       btnCloseSummary: document.getElementById('btn-close-summary'),
-      btnExport: document.getElementById('btn-export-csv'),
-      sumRmssd: document.getElementById('sum-rmssd'),
-      sumCoherence: document.getElementById('sum-coherence'),
-      sumStartBpm: document.getElementById('sum-start-bpm'),
-      sumEndBpm: document.getElementById('sum-end-bpm')
+      btnExport:       document.getElementById('btn-export-csv'),
+      sumRmssd:        document.getElementById('sum-rmssd'),
+      sumSdnn:         document.getElementById('sum-sdnn'),
+      sumCoherence:    document.getElementById('sum-coherence'),
+      sumEndBpm:       document.getElementById('sum-end-bpm'),
+      sumSd1:          document.getElementById('sum-sd1'),
+      sumSd2:          document.getElementById('sum-sd2'),
+      summaryPoincare: document.getElementById('summary-poincare'),
     };
 
-    // Protocols
+    // ----------------------------------------------------------------
+    // PROTOCOLS
+    // ----------------------------------------------------------------
     const PROTOCOLS = {
-      resonant: { name: "Resonant", bpm: 6.0, phases: [0.4, 0.0, 0.6, 0.0], customBpm: true }, // 40% in, 60% out
-      box: { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false }, // 4-4-4-4
-      relax: { name: "4-7-8 Relax", bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
-      coherence: { name: "Coherence", bpm: 5.5, phases: [0.5, 0.0, 0.5, 0.0], customBpm: false } // 5 in, 5 out
+      resonant:  { name: "Resonant",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
+      box:       { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
+      relax:     { name: "4-7-8 Relax",   bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
+      coherence: { name: "Coherence",     bpm: 5.5,  phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
     };
 
-    // State
+    // RF steps: Lehrer et al. protocol, 6.5→4.5 in 0.5 BPM steps
+    const RF_STEPS = [6.5, 6.0, 5.5, 5.0, 4.5];
+    const RF_STEP_DURATION_MS = 120000; // 2 min per step
+
+    // ----------------------------------------------------------------
+    // STATE
+    // ----------------------------------------------------------------
     let isSessionActive = false;
-    let isBaselineMode = false;
-    let activeProtocol = 'resonant';
-    let targetBpm = 6.0;
-    
-    let pacerRaf = null;
+    let isBaselineMode  = false;
+    let isRfMode        = false;
+    let activeProtocol  = 'resonant';
+    let targetBpm       = 6.0;
+    let pacerRaf        = null;
+    let tachDirty       = false;
+    let poincareDirty   = false;
     let sessionStartTime = 0;
     const BASELINE_DUR_MS = 120000;
-    
-    // Biofeedback Data
-    let ibiHistory = []; 
-    let currentPacerPhase = 'hold'; 
-    let coherenceScore = 50; 
-    let totalCoherentBeats = 0;
-    let totalValidBeats = 0;
-    let baselineBpm = 0;
 
-    // Waveform & Tachogram Buffers
+    let ibiHistory       = [];
+    let currentSessionIbis = [];
+    let currentPacerPhase  = 'hold';
+    let coherenceScore     = 50;
+    let totalCoherentBeats = 0;
+    let totalValidBeats    = 0;
+    let baselineBpm        = 0;
+
     const WAVE_MAX = 120;
     let waveBuffer = [];
-    const TACH_WINDOW_MS = 40000; 
+    const TACH_WINDOW_MS = 40000;
+    let activeChartTab = 'tach';
 
-    // Audio Engine variables
+    // RF state
+    let rfStepIndex  = 0;
+    let rfStepIbis   = [];
+    let rfAmplitudes = [];
+    let rfRunning    = false;
+
+    let savedRf = parseFloat(localStorage.getItem('kw_rf') || '0');
+
+    // Audio
     let audioEnabled = false;
     let audioCtx = null;
     let oscillator = null;
-    let gainNode = null;
+    let gainNode   = null;
 
-    // ------------------------------------------------------------------
-    // CANVAS SETUP & RESIZING
-    // ------------------------------------------------------------------
+    // ----------------------------------------------------------------
+    // CANVAS
+    // ----------------------------------------------------------------
     const waveCtx = ui.waveCanvas.getContext('2d');
     const tachCtx = ui.tachCanvas.getContext('2d');
+    const pcCtx   = ui.poincareCanvas.getContext('2d');
 
     function resizeCanvases() {
       const dpr = window.devicePixelRatio || 1;
-      
-      const wRect = ui.waveCanvas.parentElement.getBoundingClientRect();
-      ui.waveCanvas.width = wRect.width * dpr;
-      ui.waveCanvas.height = wRect.height * dpr;
-      waveCtx.scale(dpr, dpr);
-
-      const tRect = ui.tachCanvas.parentElement.getBoundingClientRect();
-      ui.tachCanvas.width = tRect.width * dpr;
-      ui.tachCanvas.height = tRect.height * dpr;
-      tachCtx.scale(dpr, dpr);
+      [[ui.waveCanvas, waveCtx], [ui.tachCanvas, tachCtx], [ui.poincareCanvas, pcCtx]].forEach(([c, ctx]) => {
+        const r = c.parentElement.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          c.width = r.width * dpr; c.height = r.height * dpr; ctx.scale(dpr, dpr);
+        }
+      });
     }
     window.addEventListener('resize', resizeCanvases);
-    resizeCanvases();
+    requestAnimationFrame(() => requestAnimationFrame(resizeCanvases));
 
-    // ------------------------------------------------------------------
-    // HISTORY & STORAGE ENGINE
-    // ------------------------------------------------------------------
-    function saveSessionToHistory(rmssd, coherencePct, startBpm, endBpm) {
+    // ----------------------------------------------------------------
+    // TABS
+    // ----------------------------------------------------------------
+    ui.tabTach.addEventListener('click', () => {
+      activeChartTab = 'tach';
+      ui.tabTach.classList.add('active'); ui.tabPoincare.classList.remove('active');
+      ui.panelTach.classList.add('active'); ui.panelPoincare.classList.remove('active');
+    });
+    ui.tabPoincare.addEventListener('click', () => {
+      activeChartTab = 'poincare';
+      ui.tabPoincare.classList.add('active'); ui.tabTach.classList.remove('active');
+      ui.panelPoincare.classList.add('active'); ui.panelTach.classList.remove('active');
+      poincareDirty = true;
+    });
+
+    // ----------------------------------------------------------------
+    // HISTORY & STORAGE
+    // ----------------------------------------------------------------
+    function saveSessionToHistory(rmssd, sdnn, coherencePct, endBpm, sd1, sd2) {
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
       const durationSec = Math.floor((performance.now() - sessionStartTime) / 1000);
-      
-      const session = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        protocol: isBaselineMode ? "Baseline Assessment" : PROTOCOLS[activeProtocol].name,
+      history.unshift({
+        id: Date.now(), date: new Date().toISOString(),
+        protocol: isBaselineMode ? 'Baseline' : PROTOCOLS[activeProtocol].name,
         duration: durationSec,
-        rmssd: Math.round(rmssd),
-        coherence: coherencePct,
-        startBpm: startBpm,
-        endBpm: endBpm
-      };
-      
-      history.unshift(session);
+        rmssd: Math.round(rmssd), sdnn: Math.round(sdnn),
+        coherence: coherencePct, endBpm,
+        sd1: Math.round(sd1), sd2: Math.round(sd2),
+      });
       localStorage.setItem('kw_history', JSON.stringify(history));
       renderHistory();
     }
 
     function renderHistory() {
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
-      if (history.length === 0) {
-        ui.historyList.innerHTML = '<div style="text-align:center; color:var(--fg-secondary); padding:32px 0;">No sessions recorded yet.</div>';
+      if (!history.length) {
+        ui.historyList.innerHTML = '<div style="text-align:center;color:var(--fg-secondary);padding:32px 0;">No sessions yet.</div>';
         return;
       }
-
-      ui.historyList.innerHTML = history.map(s => `
-        <div class="history-card">
+      ui.historyList.innerHTML = history.map(s => {
+        const isBaseline = s.protocol === 'Baseline';
+        return `<div class="history-card">
           <div class="hc-left">
             <div class="hc-date">${new Date(s.date).toLocaleDateString()} &middot; ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
             <div class="hc-title">${s.protocol}</div>
           </div>
           <div class="hc-right">
-            <div class="hc-stat">
-              <span class="hc-stat-val">${s.rmssd}</span>
-              <span class="hc-stat-lbl">RMSSD</span>
-            </div>
-            ${s.protocol !== 'Baseline Assessment' ? `
-            <div class="hc-stat">
-              <span class="hc-stat-val">${s.coherence}%</span>
-              <span class="hc-stat-lbl">Coh</span>
-            </div>` : ''}
+            <div class="hc-stat"><span class="hc-stat-val">${s.rmssd}</span><span class="hc-stat-lbl">RMSSD</span></div>
+            <div class="hc-stat"><span class="hc-stat-val">${s.sdnn||'--'}</span><span class="hc-stat-lbl">SDNN</span></div>
+            ${!isBaseline ? `<div class="hc-stat"><span class="hc-stat-val">${s.coherence}%</span><span class="hc-stat-lbl">Coh</span></div>` : ''}
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
+
+      // RMSSD trend sparkline — last 10 sessions, oldest→newest
+      const sparkData = history.slice(0, 10).reverse().map(s => s.rmssd).filter(Boolean);
+      if (sparkData.length >= 3) {
+        ui.historyList.insertAdjacentHTML('beforeend', `
+          <div style="background:var(--bg-dark);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-top:4px;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--fg-secondary);font-weight:600;margin-bottom:8px;">RMSSD Trend (last ${sparkData.length} sessions)</div>
+            ${buildSparkline(sparkData)}
+          </div>`);
+      }
+    }
+
+    function buildSparkline(data) {
+      const W = 240, H = 36, pad = 4;
+      const mn = Math.min(...data), mx = Math.max(...data), range = mx - mn || 1;
+      const pts = data.map((v, i) => {
+        const x = pad + (i / (data.length - 1)) * (W - pad*2);
+        const y = pad + ((mx - v) / range) * (H - pad*2);
+        return `${x},${y}`;
+      }).join(' ');
+      const dots = data.map((v, i) => {
+        const x = pad + (i / (data.length - 1)) * (W - pad*2);
+        const y = pad + ((mx - v) / range) * (H - pad*2);
+        return `<circle cx="${x}" cy="${y}" r="3" fill="var(--accent-main)"/>`;
+      }).join('');
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+        <polyline points="${pts}" fill="none" stroke="var(--accent-main)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+      </svg>`;
     }
 
     function exportHistoryCSV() {
-      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
-      if (history.length === 0) return;
-      
-      let csv = "Date,Protocol,Duration_Sec,RMSSD,Coherence_Pct,Start_BPM,End_BPM\n";
-      history.forEach(s => {
-        csv += `${new Date(s.date).toLocaleString()},${s.protocol},${s.duration},${s.rmssd},${s.coherence},${s.startBpm},${s.endBpm}\n`;
-      });
-      
-      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csv);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `KW_Biofeedback_History.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const h = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      if (!h.length) return;
+      let csv = "Date_ISO,Protocol,Duration_Sec,RMSSD,SDNN,SD1,SD2,Coherence_Pct,End_BPM\n";
+      h.forEach(s => { csv += `${s.date},"${s.protocol}",${s.duration},${s.rmssd},${s.sdnn||''},${s.sd1||''},${s.sd2||''},${s.coherence},${s.endBpm}\n`; });
+      triggerDownload(csv, `KW_History_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
     }
 
-    // ------------------------------------------------------------------
-    // AUDIO ENGINE (Eyes-Closed Guided Breathing)
-    // ------------------------------------------------------------------
+    function exportSessionCSV() {
+      if (!currentSessionIbis.length) return;
+      let csv = "Beat_N,Time_ms,IBI_ms,BPM\n";
+      currentSessionIbis.forEach((d, i) => { csv += `${i+1},${Math.round(d.time - currentSessionIbis[0].time)},${d.ibi},${d.bpm}\n`; });
+      triggerDownload(csv, `KW_Session_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`, 'text/csv');
+    }
+
+    function triggerDownload(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    // ----------------------------------------------------------------
+    // AUDIO
+    // ----------------------------------------------------------------
     function toggleAudio() {
       audioEnabled = !audioEnabled;
-      if (audioEnabled) {
-        ui.btnAudio.classList.add('active');
-        ui.audioWaves.style.display = 'block';
-        if (!audioCtx) initAudio();
-      } else {
-        ui.btnAudio.classList.remove('active');
-        ui.audioWaves.style.display = 'none';
-        stopAudioTone();
-      }
+      ui.btnAudio.classList.toggle('active', audioEnabled);
+      ui.audioWaves.style.display = audioEnabled ? 'block' : 'none';
+      if (audioEnabled && !audioCtx) initAudio();
+      if (!audioEnabled) stopAudioTone();
     }
-
     function initAudio() {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AudioContext();
-      gainNode = audioCtx.createGain();
-      gainNode.gain.value = 0;
-      gainNode.connect(audioCtx.destination);
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      gainNode = audioCtx.createGain(); gainNode.gain.value = 0; gainNode.connect(audioCtx.destination);
     }
-
-    function updateAudioTone(phaseProgress, state) {
+    function updateAudioTone(p, state) {
       if (!audioEnabled || !audioCtx) return;
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
-      if (!oscillator) {
-        oscillator = audioCtx.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.connect(gainNode);
-        oscillator.start();
-      }
-
-      if (state === 'hold') {
-        gainNode.gain.setTargetAtTime(0.01, audioCtx.currentTime, 0.2);
-        return;
-      }
-
-      let freq = state === 'inhale' 
-        ? 150 + (50 * Math.sin(phaseProgress * Math.PI / 2)) 
-        : 200 - (80 * Math.sin(phaseProgress * Math.PI / 2));
-      
-      oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+      if (!oscillator) { oscillator = audioCtx.createOscillator(); oscillator.type = 'sine'; oscillator.connect(gainNode); oscillator.start(); }
+      if (state === 'hold') { gainNode.gain.setTargetAtTime(0.01, audioCtx.currentTime, 0.2); return; }
+      oscillator.frequency.setTargetAtTime(state === 'inhale' ? 150 + 50 * Math.sin(p * Math.PI / 2) : 200 - 80 * Math.sin(p * Math.PI / 2), audioCtx.currentTime, 0.1);
       gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.1);
     }
-
     function stopAudioTone() {
-      if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-      if (oscillator) {
-        setTimeout(() => {
-          if(oscillator) { oscillator.stop(); oscillator.disconnect(); oscillator = null; }
-        }, 200);
-      }
+      if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx?.currentTime || 0, 0.1);
+      if (oscillator) { setTimeout(() => { if (oscillator) { oscillator.stop(); oscillator.disconnect(); oscillator = null; } }, 200); }
     }
 
-    // ------------------------------------------------------------------
-    // PACER ANIMATION LOOP (4-Phase Architecture)
-    // ------------------------------------------------------------------
+    // ----------------------------------------------------------------
+    // PACER LOOP
+    // ----------------------------------------------------------------
     function animatePacer() {
       if (!isSessionActive) return;
-
       const now = performance.now();
       const elapsedMs = now - sessionStartTime;
 
-      // Check Baseline auto-stop
       if (isBaselineMode) {
-        const remaining = BASELINE_DUR_MS - elapsedMs;
-        if (remaining <= 0) {
-          stopSession(true);
-          return;
-        }
-        const rSec = Math.floor(remaining / 1000);
-        ui.sessionTime.textContent = `${Math.floor(rSec/60).toString().padStart(2,'0')}:${(rSec%60).toString().padStart(2,'0')}`;
+        const rem = BASELINE_DUR_MS - elapsedMs;
+        if (rem <= 0) { stopSession(true); return; }
+        const s = Math.floor(rem / 1000);
+        ui.sessionTime.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+      } else if (isRfMode) {
+        // Check if current step window has elapsed
+        const stepElapsed = elapsedMs - rfStepIndex * RF_STEP_DURATION_MS;
+        const rem = RF_STEP_DURATION_MS - stepElapsed;
+        const s = Math.max(0, Math.floor(rem / 1000));
+        ui.sessionTime.textContent = `Step ${rfStepIndex+1}/${RF_STEPS.length} — ${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+        // Advance step when time's up
+        if (rem <= 0 && rfRunning) { rfRunning = false; advanceRfStep(); }
+        // Update progress bar
+        const totalDone = rfStepIndex * RF_STEP_DURATION_MS + Math.min(stepElapsed, RF_STEP_DURATION_MS);
+        ui.rfProgressFill.style.width = `${Math.min(100, (totalDone / (RF_STEPS.length * RF_STEP_DURATION_MS)) * 100)}%`;
       } else {
-        const totalSecs = Math.floor(elapsedMs / 1000);
-        ui.sessionTime.textContent = `${Math.floor(totalSecs/60).toString().padStart(2,'0')}:${(totalSecs%60).toString().padStart(2,'0')}`;
+        const total = Math.floor(elapsedMs / 1000);
+        ui.sessionTime.textContent = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
+        if (total >= 1200) ui.trainingTip.textContent = '✓ 20 min reached';
       }
 
       if (!isBaselineMode) {
         const pDef = PROTOCOLS[activeProtocol];
-        const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
+        // RF mode uses current step BPM, ignoring protocol
+        const currentBpm = isRfMode ? RF_STEPS[rfStepIndex] : (pDef.customBpm ? targetBpm : pDef.bpm);
         const cycleMs = (60 / currentBpm) * 1000;
-        const phaseProgress = (elapsedMs % cycleMs) / cycleMs; // 0.0 to 1.0
-        
-        let scale = 1; let color = 'var(--border)'; let shadow = ''; let text = ""; let tColor = "";
-        const [pIn, pHIn, pOut, pHOut] = pDef.phases;
-        
+        const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
+        // In RF mode, use simple 50/50 inhale/exhale (no holds — cleaner RSA signal)
+        const [pIn, pHIn, pOut] = isRfMode ? [0.5, 0.0, 0.5] : pDef.phases;
+        let scale = 1, color = 'var(--border)', shadow = '', text = '';
+
         if (phaseProgress < pIn) {
-          // INHALE
-          const p = phaseProgress / pIn; 
-          const ease = 1 - Math.pow(1 - p, 3);
-          scale = 1 + (ease * 0.4); 
-          color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96, 165, 250, ${0.2 + (ease * 0.3)})`; text = "Inhale";
+          const p = phaseProgress / pIn, ease = 1 - Math.pow(1-p, 3);
+          scale = 1 + ease*0.4; color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96,165,250,${0.2+ease*0.3})`; text = 'Inhale';
           currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
         } else if (phaseProgress < pIn + pHIn) {
-          // HOLD IN
-          scale = 1.4; 
-          color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96, 165, 250, 0.5)`; text = "Hold";
+          scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(96,165,250,0.5)'; text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
         } else if (phaseProgress < pIn + pHIn + pOut) {
-          // EXHALE
-          const p = (phaseProgress - (pIn + pHIn)) / pOut; 
-          const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-          scale = 1.4 - (ease * 0.4); 
-          color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167, 139, 250, ${0.5 - (ease * 0.3)})`; text = "Exhale";
+          const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
+          const ease = p < 0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+          scale = 1.4 - ease*0.4; color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167,139,250,${0.5-ease*0.3})`; text = 'Exhale';
           currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
         } else {
-          // HOLD OUT
-          scale = 1.0; 
-          color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167, 139, 250, 0.2)`; text = "Hold";
+          scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(167,139,250,0.2)'; text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
         }
-
         ui.pacerRing.style.transform = `scale(${scale})`;
         ui.pacerRing.style.borderColor = color;
         ui.pacerRing.style.boxShadow = shadow;
-        if (ui.pacerText.textContent !== text) {
-          ui.pacerText.textContent = text;
-          ui.pacerText.style.color = color;
-        }
+        if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
       }
 
-      drawTachogram(now);
+      if (tachDirty && activeChartTab === 'tach') { drawTachogram(now); tachDirty = false; }
+      if (poincareDirty && activeChartTab === 'poincare') { drawPoincare(); poincareDirty = false; }
       pacerRaf = requestAnimationFrame(animatePacer);
     }
 
-    // ------------------------------------------------------------------
-    // COHERENCE ENGINE
-    // ------------------------------------------------------------------
-    function evaluateCoherence(ibiMs) {
-      if (ibiHistory.length < 2 || isBaselineMode) return;
-      
-      const prevIbi = ibiHistory[ibiHistory.length - 2].ibi;
-      
-      // ARTIFACT FILTER
-      const pctChange = Math.abs(ibiMs - prevIbi) / prevIbi;
-      if (pctChange > 0.30) return; 
-
-      const dIbi = ibiMs - prevIbi; 
-      let isCoherent = false;
-      
-      if (currentPacerPhase === 'inhale' && dIbi <= 0) isCoherent = true;
-      if (currentPacerPhase === 'exhale' && dIbi >= 0) isCoherent = true;
-      // In hold phases, any stable HR is acceptable
-
-      totalValidBeats++;
-      if (isCoherent) totalCoherentBeats++;
-
-      const targetScore = isCoherent ? 100 : 0;
-      coherenceScore = (coherenceScore * 0.8) + (targetScore * 0.2);
-      
-      ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
-      if (coherenceScore >= 70) ui.cohBar.style.backgroundColor = 'var(--coh-high)';
-      else if (coherenceScore >= 40) ui.cohBar.style.backgroundColor = 'var(--coh-med)';
-      else ui.cohBar.style.backgroundColor = 'var(--coh-low)';
+    // ----------------------------------------------------------------
+    // HRV MATH
+    // ----------------------------------------------------------------
+    function computeRMSSD(ibis) {
+      let sumSq = 0, n = 0;
+      for (let i = 1; i < ibis.length; i++) {
+        const lm = (ibis[i] + ibis[i-1]) / 2, diff = ibis[i] - ibis[i-1];
+        if (Math.abs(diff) / lm < 0.20) { sumSq += diff*diff; n++; }
+      }
+      return n > 0 ? Math.sqrt(sumSq / n) : 0;
     }
 
-    // ------------------------------------------------------------------
-    // DRAWING: RAW PPG WAVEFORM
-    // ------------------------------------------------------------------
+    function computeSDNN(ibis) {
+      if (ibis.length < 2) return 0;
+      const mean = ibis.reduce((a,b) => a+b, 0) / ibis.length;
+      return Math.sqrt(ibis.reduce((s,v) => s + Math.pow(v-mean, 2), 0) / ibis.length);
+    }
+
+    // Poincaré SD1 / SD2
+    // SD1 = std of (RRn+1 - RRn) / sqrt(2)  ≈ RMSSD / sqrt(2)  — short-term beat-to-beat variability
+    // SD2 = std of (RRn+1 + RRn) / sqrt(2)                      — long-term variability
+    function computePoincare(ibis) {
+      if (ibis.length < 3) return { sd1: 0, sd2: 0 };
+      const x = ibis.slice(0,-1).map((v,i) => (ibis[i+1]-v) / Math.SQRT2);
+      const y = ibis.slice(0,-1).map((v,i) => (ibis[i+1]+v) / Math.SQRT2);
+      const meanX = x.reduce((a,b) => a+b, 0) / x.length;
+      const meanY = y.reduce((a,b) => a+b, 0) / y.length;
+      const varX  = x.reduce((s,v) => s + Math.pow(v-meanX,2), 0) / x.length;
+      const varY  = y.reduce((s,v) => s + Math.pow(v-meanY,2), 0) / y.length;
+      return { sd1: Math.sqrt(Math.max(0,varX)), sd2: Math.sqrt(Math.max(0,varY)) };
+    }
+
+    // IBI amplitude: 90th–10th percentile — robust against single outliers
+    function ibiAmplitude(ibis) {
+      if (ibis.length < 4) return 0;
+      const s = [...ibis].sort((a,b) => a-b);
+      return s[Math.floor(s.length*0.9)] - s[Math.floor(s.length*0.1)];
+    }
+
+    // ----------------------------------------------------------------
+    // COHERENCE
+    // ----------------------------------------------------------------
+    function evaluateCoherence(ibiMs) {
+      if (ibiHistory.length < 2 || isBaselineMode || isRfMode) return;
+      const prev = ibiHistory[ibiHistory.length-2].ibi;
+      const lm   = ibiHistory.slice(-5).reduce((s,d) => s+d.ibi, 0) / Math.min(5, ibiHistory.length);
+      if (Math.abs(ibiMs - prev) / lm > 0.20) return;
+      const d = ibiMs - prev;
+      let coherent = false;
+      if (currentPacerPhase === 'inhale' && d <= 0) coherent = true;
+      if (currentPacerPhase === 'exhale' && d >= 0) coherent = true;
+      totalValidBeats++;
+      if (coherent) totalCoherentBeats++;
+      coherenceScore = coherenceScore*0.8 + (coherent ? 100 : 0)*0.2;
+      ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
+      ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
+    }
+
+    // ----------------------------------------------------------------
+    // DRAWING
+    // ----------------------------------------------------------------
     function drawWave() {
-      const width = ui.waveCanvas.width / (window.devicePixelRatio || 1);
-      const height = ui.waveCanvas.height / (window.devicePixelRatio || 1);
-      waveCtx.clearRect(0, 0, width, height);
+      const W = ui.waveCanvas.width/(window.devicePixelRatio||1), H = ui.waveCanvas.height/(window.devicePixelRatio||1);
+      waveCtx.clearRect(0,0,W,H);
       if (waveBuffer.length < 2) return;
-
       let mn = waveBuffer[0], mx = waveBuffer[0];
-      for (const v of waveBuffer) { if (v < mn) mn = v; if (v > mx) mx = v; }
-      const range = mx - mn || 0.001;
-      
-      const pad = 4;
-      const xStep = width / WAVE_MAX;
-      const xOff = (WAVE_MAX - waveBuffer.length) * xStep;
-
-      waveCtx.beginPath();
-      waveCtx.strokeStyle = '#3b82f6';
-      waveCtx.lineWidth = 2;
-      waveCtx.lineJoin = 'round';
-      
-      for (let i = 0; i < waveBuffer.length; i++) {
-        const x = xOff + i * xStep;
-        const y = pad + ((mx - waveBuffer[i]) / range) * (height - pad * 2);
-        i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+      for (const v of waveBuffer) { if(v<mn)mn=v; if(v>mx)mx=v; }
+      const range = mx-mn||0.001, pad=4, xStep=W/WAVE_MAX, xOff=(WAVE_MAX-waveBuffer.length)*xStep;
+      waveCtx.beginPath(); waveCtx.strokeStyle='#3b82f6'; waveCtx.lineWidth=2; waveCtx.lineJoin='round';
+      for (let i=0;i<waveBuffer.length;i++) {
+        const x=xOff+i*xStep, y=pad+((mx-waveBuffer[i])/range)*(H-pad*2);
+        i===0 ? waveCtx.moveTo(x,y) : waveCtx.lineTo(x,y);
       }
       waveCtx.stroke();
     }
 
-    // ------------------------------------------------------------------
-    // DRAWING: IBI TACHOGRAM
-    // ------------------------------------------------------------------
     function drawTachogram(now) {
-      const width = ui.tachCanvas.width / (window.devicePixelRatio || 1);
-      const height = ui.tachCanvas.height / (window.devicePixelRatio || 1);
-      tachCtx.clearRect(0, 0, width, height);
-      if (ibiHistory.length < 2) return;
-
-      const visibleData = ibiHistory.filter(d => (now - d.time) < TACH_WINDOW_MS);
-      if (visibleData.length < 2) return;
-
-      const ibis = visibleData.map(d => d.ibi);
-      const minIbi = Math.min(...ibis);
-      const maxIbi = Math.max(...ibis);
-      const range = Math.max(100, maxIbi - minIbi); 
-      const padding = range * 0.2;
-      
-      const yMin = minIbi - padding;
-      const yMax = maxIbi + padding;
-
-      // Draw Grid Lines
-      const mean = ibis.reduce((a, b) => a + b, 0) / ibis.length;
-      const meanY = height - (((mean - yMin) / (yMax - yMin)) * height);
-      tachCtx.beginPath();
-      tachCtx.strokeStyle = 'rgba(161, 161, 170, 0.2)';
-      tachCtx.setLineDash([4, 4]);
-      tachCtx.moveTo(0, meanY);
-      tachCtx.lineTo(width, meanY);
+      const W=ui.tachCanvas.width/(window.devicePixelRatio||1), H=ui.tachCanvas.height/(window.devicePixelRatio||1);
+      tachCtx.clearRect(0,0,W,H);
+      const vis = ibiHistory.filter(d=>(now-d.time)<TACH_WINDOW_MS);
+      if (vis.length < 2) return;
+      const ibis=vis.map(d=>d.ibi), mn=Math.min(...ibis), mx=Math.max(...ibis);
+      const range=Math.max(100,mx-mn), pad=range*0.2, yMin=mn-pad, yMax=mx+pad;
+      const mean=ibis.reduce((a,b)=>a+b,0)/ibis.length;
+      const mY=H-((mean-yMin)/(yMax-yMin))*H;
+      tachCtx.beginPath(); tachCtx.strokeStyle='rgba(161,161,170,0.2)'; tachCtx.setLineDash([4,4]);
+      tachCtx.moveTo(0,mY); tachCtx.lineTo(W,mY); tachCtx.stroke(); tachCtx.setLineDash([]);
+      tachCtx.beginPath(); tachCtx.strokeStyle='#60a5fa'; tachCtx.lineWidth=2.5; tachCtx.lineJoin='round';
+      vis.forEach((pt,i) => {
+        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W, y=H-((pt.ibi-yMin)/(yMax-yMin))*H;
+        if (i===0) { tachCtx.moveTo(x,y); return; }
+        const prev=vis[i-1], pAge=now-prev.time;
+        const px=W-(pAge/TACH_WINDOW_MS)*W, py=H-((prev.ibi-yMin)/(yMax-yMin))*H, cx=(x+px)/2;
+        tachCtx.bezierCurveTo(cx,py,cx,y,x,y);
+      });
       tachCtx.stroke();
-      tachCtx.setLineDash([]);
+      vis.forEach(pt => {
+        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W, y=H-((pt.ibi-yMin)/(yMax-yMin))*H;
+        tachCtx.beginPath(); tachCtx.fillStyle='#fff'; tachCtx.arc(x,y,2.5,0,Math.PI*2); tachCtx.fill();
+      });
+    }
 
-      // Draw Smooth Curve
-      tachCtx.beginPath();
-      tachCtx.strokeStyle = '#60a5fa';
-      tachCtx.lineWidth = 2.5;
-      tachCtx.lineJoin = 'round';
-
-      for (let i = 0; i < visibleData.length; i++) {
-        const point = visibleData[i];
-        const age = now - point.time;
-        const x = width - ((age / TACH_WINDOW_MS) * width);
-        const y = height - (((point.ibi - yMin) / (yMax - yMin)) * height);
-
-        if (i === 0) tachCtx.moveTo(x, y);
-        else {
-          const prev = visibleData[i-1];
-          const prevAge = now - prev.time;
-          const prevX = width - ((prevAge / TACH_WINDOW_MS) * width);
-          const prevY = height - (((prev.ibi - yMin) / (yMax - yMin)) * height);
-          const cpX = (x + prevX) / 2;
-          tachCtx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
-        }
+    function drawPoincare(targetCanvas, targetCtx, ibisOverride) {
+      const canvas = targetCanvas || ui.poincareCanvas;
+      const ctx    = targetCtx    || pcCtx;
+      const ibis   = ibisOverride || ibiHistory.map(d=>d.ibi);
+      const dpr    = targetCanvas ? 1 : (window.devicePixelRatio||1);
+      const W=canvas.width/dpr, H=canvas.height/dpr;
+      ctx.clearRect(0,0,W,H);
+      if (ibis.length < 3) return;
+      const pad=12;
+      const all=[...ibis.slice(0,-1), ...ibis.slice(1)];
+      const minV=Math.min(...all)-20, maxV=Math.max(...all)+20;
+      const toX=v=>pad+((v-minV)/(maxV-minV))*(W-pad*2);
+      const toY=v=>H-pad-((v-minV)/(maxV-minV))*(H-pad*2);
+      // Identity line
+      ctx.beginPath(); ctx.strokeStyle='rgba(161,161,170,0.2)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.moveTo(toX(minV),toY(minV)); ctx.lineTo(toX(maxV),toY(maxV)); ctx.stroke(); ctx.setLineDash([]);
+      // Points — recency gradient
+      const n=ibis.length-1;
+      for (let i=0;i<n;i++) {
+        const alpha = targetCanvas ? 0.7 : 0.15+(i/n)*0.75;
+        ctx.beginPath(); ctx.fillStyle=`rgba(96,165,250,${alpha.toFixed(2)})`;
+        ctx.arc(toX(ibis[i]), toY(ibis[i+1]), targetCanvas?2.5:3, 0, Math.PI*2);
+        ctx.fill();
       }
-      tachCtx.stroke();
-
-      // Draw dots
-      for (let i = 0; i < visibleData.length; i++) {
-        const point = visibleData[i];
-        const age = now - point.time;
-        const x = width - ((age / TACH_WINDOW_MS) * width);
-        const y = height - (((point.ibi - yMin) / (yMax - yMin)) * height);
-        
-        tachCtx.beginPath();
-        tachCtx.fillStyle = '#ffffff';
-        tachCtx.arc(x, y, 3, 0, Math.PI * 2);
-        tachCtx.fill();
+      if (!targetCanvas) {
+        const {sd1,sd2} = computePoincare(ibis);
+        ui.pcSdReadout.textContent = `SD1: ${Math.round(sd1)}\nSD2: ${Math.round(sd2)}`;
       }
     }
 
-    // ------------------------------------------------------------------
+    // ----------------------------------------------------------------
     // EPAT CALLBACKS
-    // ------------------------------------------------------------------
+    // ----------------------------------------------------------------
     function handleFingerChange(present) {
-      if (present) {
-        ui.fingerDot.classList.add('active');
-        ui.fingerText.textContent = "Signal Good";
-        ui.liveBpm.classList.remove('dim');
-      } else {
-        ui.fingerDot.classList.remove('active');
-        ui.fingerText.textContent = "Adjust Finger";
-        ui.liveBpm.classList.add('dim');
-        ui.liveBpm.textContent = "--";
-        waveBuffer = []; drawWave();
-      }
+      ui.fingerDot.classList.toggle('active', present);
+      ui.fingerText.textContent = present ? 'Signal Good' : 'Adjust Finger';
+      if (!present) { ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent='--'; waveBuffer=[]; drawWave(); }
+      else ui.liveBpm.classList.remove('dim');
     }
 
     function handleBeat(beat) {
       if (!isSessionActive) return;
-      
       const ibiMs = beat.instantPeriod * 1000;
-      const bpm = Math.round(beat.averageBPM);
-      
+      const bpm   = Math.round(beat.averageBPM);
       ui.liveBpm.textContent = bpm;
-      
-      if (baselineBpm === 0 && ibiHistory.length > 3) baselineBpm = bpm;
-
-      ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs), bpm: bpm });
+      if (baselineBpm===0 && ibiHistory.length>3) baselineBpm=bpm;
+      const entry = { time: performance.now(), ibi: Math.round(ibiMs), bpm };
+      ibiHistory.push(entry);
+      currentSessionIbis.push(entry);
+      tachDirty=true; poincareDirty=true;
       evaluateCoherence(ibiMs);
-
+      if (isRfMode) rfStepIbis.push(Math.round(ibiMs));
       ui.beatFlash.classList.add('flash');
-      setTimeout(() => ui.beatFlash.classList.remove('flash'), 80);
+      setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
     }
 
-    function handlePPGSample(sample) {
-      waveBuffer.push(sample);
-      if (waveBuffer.length > WAVE_MAX) waveBuffer.shift();
-      requestAnimationFrame(drawWave);
-    }
+    function handlePPGSample(s) { waveBuffer.push(s); if(waveBuffer.length>WAVE_MAX)waveBuffer.shift(); requestAnimationFrame(drawWave); }
+    function handleSQI(sqi) { ui.sqiText.textContent=`SQI: ${(sqi*100).toFixed(1)}%`; ui.sqiText.style.color=sqi>0.01?'var(--coh-high)':'var(--coh-med)'; }
 
-    function handleSQI(sqi) {
-      const pct = (sqi * 100).toFixed(1);
-      ui.sqiText.textContent = `SQI: ${pct}%`;
-      ui.sqiText.style.color = sqi > 0.005 ? 'var(--coh-high)' : 'var(--coh-med)';
-    }
-
-    // ------------------------------------------------------------------
+    // ----------------------------------------------------------------
     // SESSION MANAGEMENT
-    // ------------------------------------------------------------------
-    async function startSession(baselineTrigger = false) {
-      isBaselineMode = baselineTrigger;
-      
-      ibiHistory = []; waveBuffer = [];
-      coherenceScore = 50; totalCoherentBeats = 0; totalValidBeats = 0; baselineBpm = 0;
-      
-      ui.cohBar.style.width = '50%';
-      ui.cohBar.style.backgroundColor = 'var(--coh-med)';
-      
-      ui.btnMain.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
+    // ----------------------------------------------------------------
+    async function startSession(baselineTrigger=false, rfTrigger=false) {
+      isBaselineMode=baselineTrigger; isRfMode=rfTrigger;
+      ibiHistory=[]; waveBuffer=[]; currentSessionIbis=[];
+      coherenceScore=50; totalCoherentBeats=0; totalValidBeats=0; baselineBpm=0;
+      tachDirty=false; poincareDirty=false;
+      ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
+      ui.trainingTip.textContent='Target: 20 min/day';
+      ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
-      
-      if (isBaselineMode) {
-        ui.baselineOverlay.classList.add('active');
-        ui.modalSettings.classList.remove('show');
-      }
-
+      if (isBaselineMode) { ui.baselineOverlay.classList.add('active'); ui.modalSettings.classList.remove('show'); }
       await WakeLockCtrl.request();
-
       try {
         await BeatDetector.start({
-          video: document.getElementById('video-feed'),
-          canvas: document.getElementById('sampling-canvas'),
-          onBeatCb: handleBeat,
-          onFingerChangeCb: handleFingerChange,
-          onPPGSampleCb: handlePPGSample,
-          onSqiUpdateCb: handleSQI
+          video: document.getElementById('video-feed'), canvas: document.getElementById('sampling-canvas'),
+          onBeatCb: handleBeat, onFingerChangeCb: handleFingerChange, onPPGSampleCb: handlePPGSample, onSqiUpdateCb: handleSQI
         });
-        
-        isSessionActive = true;
-        sessionStartTime = performance.now();
-        pacerRaf = requestAnimationFrame(animatePacer);
-        
-      } catch (err) {
-        console.error(err);
-        alert("Camera and Torch required to measure heart rate. Please allow permissions.");
-        stopSession(false);
+        isSessionActive=true; sessionStartTime=performance.now();
+        pacerRaf=requestAnimationFrame(animatePacer);
+      } catch(err) {
+        console.error(err); alert("Camera and Torch required. Please allow permissions."); stopSession(false);
       }
     }
 
-    async function stopSession(showSummary = true) {
-      isSessionActive = false;
-      cancelAnimationFrame(pacerRaf);
-      stopAudioTone();
-      await BeatDetector.stop();
-      WakeLockCtrl.release();
-
-      ui.btnMain.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training Session`;
+    async function stopSession(showSummary=true) {
+      isSessionActive=false; cancelAnimationFrame(pacerRaf); stopAudioTone();
+      await BeatDetector.stop(); WakeLockCtrl.release();
+      ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training Session`;
       ui.btnMain.classList.remove('active');
-      
-      ui.pacerRing.style.transform = `scale(1)`;
-      ui.pacerRing.style.borderColor = 'var(--border)';
-      ui.pacerRing.style.boxShadow = 'none';
-      ui.pacerText.textContent = "Ready";
-      ui.pacerText.style.color = "var(--fg-secondary)";
+      ui.pacerRing.style.transform='scale(1)'; ui.pacerRing.style.borderColor='var(--border)'; ui.pacerRing.style.boxShadow='none';
+      ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--fg-secondary)';
       ui.baselineOverlay.classList.remove('active');
-      
-      ui.fingerDot.classList.remove('active');
-      ui.fingerText.textContent = "Awaiting Signal";
-      ui.sqiText.textContent = "SQI: --";
-      ui.sqiText.style.color = "var(--fg-secondary)";
-      ui.liveBpm.textContent = "--";
-      ui.liveBpm.classList.add('dim');
-
-      if (showSummary && ibiHistory.length > 5) {
-        generateSummary();
-      }
+      ui.fingerDot.classList.remove('active'); ui.fingerText.textContent='Awaiting Signal';
+      ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--fg-secondary)';
+      ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
+      isRfMode=false; rfRunning=false;
+      if (showSummary && ibiHistory.length>5) generateSummary();
     }
 
     function generateSummary() {
-      // Calculate RMSSD
-      let sumSq = 0;
-      let validDiffs = 0;
-      for (let i = 1; i < ibiHistory.length; i++) {
-        const diff = ibiHistory[i].ibi - ibiHistory[i-1].ibi;
-        if (Math.abs(diff) < 500) {  // Ectopic filter
-          sumSq += (diff * diff);
-          validDiffs++;
-        }
-      }
-      const rmssd = validDiffs > 0 ? Math.sqrt(sumSq / validDiffs) : 0;
-      const coherencePct = totalValidBeats > 0 ? Math.round((totalCoherentBeats / totalValidBeats) * 100) : 0;
-      const endBpm = ibiHistory[ibiHistory.length - 1].bpm;
-
-      ui.sumRmssd.textContent = Math.round(rmssd);
-      ui.sumCoherence.textContent = isBaselineMode ? "N/A" : `${coherencePct}%`;
-      ui.sumStartBpm.textContent = baselineBpm || "--";
-      ui.sumEndBpm.textContent = endBpm;
-
-      saveSessionToHistory(rmssd, coherencePct, baselineBpm, endBpm);
+      const ibis   = ibiHistory.map(d=>d.ibi);
+      const rmssd  = computeRMSSD(ibis);
+      const sdnn   = computeSDNN(ibis);
+      const {sd1,sd2} = computePoincare(ibis);
+      const cohPct = totalValidBeats>0 ? Math.round((totalCoherentBeats/totalValidBeats)*100) : 0;
+      const endBpm = ibiHistory[ibiHistory.length-1].bpm;
+      ui.sumRmssd.textContent     = Math.round(rmssd);
+      ui.sumSdnn.textContent      = Math.round(sdnn);
+      ui.sumSd1.textContent       = Math.round(sd1);
+      ui.sumSd2.textContent       = Math.round(sd2);
+      ui.sumCoherence.textContent = isBaselineMode ? 'N/A' : `${cohPct}%`;
+      ui.sumEndBpm.textContent    = endBpm;
+      const sCtx = ui.summaryPoincare.getContext('2d');
+      drawPoincare(ui.summaryPoincare, sCtx, ibis);
+      saveSessionToHistory(rmssd, sdnn, cohPct, endBpm, sd1, sd2);
       ui.modalSummary.classList.add('show');
     }
 
-    // ------------------------------------------------------------------
-    // EVENT LISTENERS
-    // ------------------------------------------------------------------
-    ui.btnMain.addEventListener('click', () => {
-      if (isSessionActive) stopSession(true);
-      else startSession(false);
-    });
+    // ----------------------------------------------------------------
+    // RF FINDER
+    // ----------------------------------------------------------------
+    function buildRfStepDisplay() {
+      ui.rfStepDisplay.innerHTML = RF_STEPS.map((bpm,i) => `
+        <div class="rf-step-item" id="rf-step-${i}">
+          <div class="rf-step-bar-bg"><div class="rf-step-bar-fill" id="rf-bar-${i}"></div></div>
+          <div class="rf-step-bpm">${bpm}</div>
+        </div>`).join('');
+    }
 
-    ui.btnAudio.addEventListener('click', toggleAudio);
-    
-    // History Modal
-    ui.btnHistory.addEventListener('click', () => { renderHistory(); ui.modalHistory.classList.add('show'); });
-    ui.btnCloseHistory.addEventListener('click', () => ui.modalHistory.classList.remove('show'));
-    ui.btnExportHistory.addEventListener('click', exportHistoryCSV);
+    function updateRfStepDisplay() {
+      RF_STEPS.forEach((_,i) => {
+        const el = document.getElementById(`rf-step-${i}`);
+        if (el) { el.classList.remove('current','winner'); if(i===rfStepIndex&&rfRunning) el.classList.add('current'); }
+      });
+      rfAmplitudes.forEach((amp,i) => {
+        const maxAmp = Math.max(...rfAmplitudes, 1);
+        const bar = document.getElementById(`rf-bar-${i}`);
+        if (bar) bar.style.height=`${Math.round((amp/maxAmp)*100)}%`;
+      });
+    }
 
-    // Settings Modal
-    ui.btnSettings.addEventListener('click', () => ui.modalSettings.classList.add('show'));
-    ui.btnCloseSettings.addEventListener('click', () => ui.modalSettings.classList.remove('show'));
-    ui.btnRunBaseline.addEventListener('click', () => startSession(true));
-
-    // Summary Modal
-    ui.btnCloseSummary.addEventListener('click', () => {
-      ui.modalSummary.classList.remove('show');
-      waveBuffer = []; drawWave();
-      ibiHistory = []; drawTachogram(performance.now());
-    });
-    
-    ui.btnExport.addEventListener('click', exportSessionCSV); // Export single session
-
-    // Protocols & Slider
-    ui.selectProtocol.addEventListener('change', (e) => {
-      activeProtocol = e.target.value;
-      if (PROTOCOLS[activeProtocol].customBpm) {
-        ui.groupBpm.style.display = 'block';
-        ui.pacerText.textContent = "Ready";
+    function advanceRfStep() {
+      // Snapshot amplitude for the step that just ended
+      const amp = ibiAmplitude(rfStepIbis);
+      rfAmplitudes.push(amp);
+      rfStepIbis = [];
+      updateRfStepDisplay();
+      rfStepIndex++;
+      if (rfStepIndex >= RF_STEPS.length) {
+        finishRfAssessment();
       } else {
-        ui.groupBpm.style.display = 'none';
-        ui.pacerText.textContent = PROTOCOLS[activeProtocol].name;
+        rfRunning = true;
+        ui.rfStatusText.textContent = `Breathing at ${RF_STEPS[rfStepIndex]} BPM — hold still and follow the pacer`;
+        updateRfStepDisplay();
       }
-    });
+    }
 
-    ui.sliderBpm.addEventListener('input', (e) => {
-      targetBpm = parseFloat(e.target.value);
-      ui.valBpm.textContent = `${targetBpm.toFixed(1)} breaths/min`;
-    });
+    function finishRfAssessment() {
+      rfRunning = false;
+      const winnerIdx = rfAmplitudes.indexOf(Math.max(...rfAmplitudes));
+      const winnerBpm = RF_STEPS[winnerIdx];
+      const stepEl = document.getElementById(`rf-step-${winnerIdx}`);
+      const barEl  = document.getElementById(`rf-bar-${winnerIdx}`);
+      if (stepEl) stepEl.classList.add('winner');
+      if (barEl)  barEl.style.background='var(--coh-high)';
+      // Save & apply
+      savedRf=winnerBpm; localStorage.setItem('kw_rf', winnerBpm.toString());
+      targetBpm=winnerBpm; ui.sliderBpm.value=winnerBpm; ui.valBpm.textContent=`${winnerBpm.toFixed(1)} breaths/min`;
+      updateRfSavedBadge();
+      ui.rfResultVal.textContent=winnerBpm.toFixed(1);
+      ui.rfResultBox.style.display='block';
+      ui.rfStatusText.textContent='Assessment complete. This rate produced the largest heart rate oscillations for you.';
+      ui.btnRfAction.textContent='Done';
+      ui.btnRfAction.onclick=() => { stopSession(false); ui.modalRf.classList.remove('show'); ui.modalSettings.classList.add('show'); resetRfModal(); };
+    }
 
-    // Default audio toggle UI setup
-    ui.audioWaves.style.display = 'none';
-    renderHistory(); // Initial render
+    function resetRfModal() {
+      rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; rfRunning=false;
+      ui.rfProgressFill.style.width='0%';
+      ui.rfResultBox.style.display='none';
+      ui.rfStatusText.textContent='Place your finger over the camera lens and press Start.';
+      ui.btnRfAction.textContent='Start Assessment';
+      ui.btnRfAction.onclick=startRfAssessment;
+      buildRfStepDisplay();
+    }
 
+    async function startRfAssessment() {
+      rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; rfRunning=false;
+      ui.rfStatusText.textContent='Starting camera…';
+      try {
+        await startSession(false, true);
+        rfRunning=true;
+        ui.rfStatusText.textContent=`Breathing at ${RF_STEPS[0]} BPM — hold still and follow the pacer`;
+        updateRfStepDisplay();
+      } catch(e) { ui.rfStatusText.textContent='Camera error. Please allow permissions.'; }
+    }
+
+    function updateRfSavedBadge() {
+      if (savedRf>0) { ui.rfSavedBadge.classList.add('show'); ui.rfBadgeText.textContent=`RF: ${savedRf.toFixed(1)} BPM saved`; }
+      else ui.rfSavedBadge.classList.remove('show');
+    }
+
+    // ----------------------------------------------------------------
+    // MODAL HELPERS
+    // ----------------------------------------------------------------
+    function setupModal(backdrop, card, closeFn) {
+      backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeFn(); });
+      if (card) card.addEventListener('click', e=>e.stopPropagation());
+    }
+
+    // ----------------------------------------------------------------
+    // EVENT LISTENERS
+    // ----------------------------------------------------------------
+    ui.btnMain.addEventListener('click', ()=>{ if(isSessionActive) stopSession(true); else startSession(false); });
+    ui.btnAudio.addEventListener('click', toggleAudio);
+
+    ui.btnHistory.addEventListener('click', ()=>{ renderHistory(); ui.modalHistory.classList.add('show'); });
+    ui.btnCloseHistory.addEventListener('click', ()=>ui.modalHistory.classList.remove('show'));
+    ui.btnExportHistory.addEventListener('click', exportHistoryCSV);
+    setupModal(ui.modalHistory, document.getElementById('modal-history-card'), ()=>ui.modalHistory.classList.remove('show'));
+
+    ui.btnSettings.addEventListener('click', ()=>{ updateRfSavedBadge(); ui.modalSettings.classList.add('show'); });
+    ui.btnCloseSettings.addEventListener('click', ()=>ui.modalSettings.classList.remove('show'));
+    ui.btnRunBaseline.addEventListener('click', ()=>startSession(true));
+    setupModal(ui.modalSettings, document.getElementById('modal-settings-card'), ()=>ui.modalSettings.classList.remove('show'));
+
+    ui.btnFindRf.addEventListener('click', ()=>{ ui.modalSettings.classList.remove('show'); buildRfStepDisplay(); resetRfModal(); ui.modalRf.classList.add('show'); });
+    ui.btnRfAction.addEventListener('click', startRfAssessment);
+    ui.btnRfCancel.addEventListener('click', ()=>{ if(isSessionActive&&isRfMode) stopSession(false); ui.modalRf.classList.remove('show'); resetRfModal(); ui.modalSettings.classList.add('show'); });
+    setupModal(ui.modalRf, document.getElementById('modal-rf-card'), ()=>{ if(isSessionActive&&isRfMode) stopSession(false); ui.modalRf.classList.remove('show'); resetRfModal(); });
+
+    ui.btnCloseSummary.addEventListener('click', ()=>{ ui.modalSummary.classList.remove('show'); waveBuffer=[]; drawWave(); ibiHistory=[]; drawTachogram(performance.now()); drawPoincare(); });
+    ui.btnExport.addEventListener('click', exportSessionCSV);
+    setupModal(ui.modalSummary, document.getElementById('modal-summary-card'), ()=>ui.modalSummary.classList.remove('show'));
+
+    ui.selectProtocol.addEventListener('change', e=>{ activeProtocol=e.target.value; const p=PROTOCOLS[activeProtocol]; ui.valProtocol.textContent=p.name; ui.groupBpm.style.display=p.customBpm?'block':'none'; });
+    ui.sliderBpm.addEventListener('input', e=>{ targetBpm=parseFloat(e.target.value); ui.valBpm.textContent=`${targetBpm.toFixed(1)} breaths/min`; });
+
+    // ----------------------------------------------------------------
+    // INIT
+    // ----------------------------------------------------------------
+    ui.audioWaves.style.display='none';
+    if (savedRf>0) { targetBpm=savedRf; ui.sliderBpm.value=savedRf; ui.valBpm.textContent=`${savedRf.toFixed(1)} breaths/min`; }
+    updateRfSavedBadge();
+    renderHistory();
   </script>
 </body>
 </html>
