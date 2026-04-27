@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>KW Biofeedback</title>
+  <meta name="theme-color" content="#0a0a0c">
+  <style>
+    /* ============================================================
+       DESIGN TOKENS & BASE STYLES
+       ============================================================ */
+    :root {
+      --bg-dark: #09090b;
+      --bg-card: #18181b;
+      --bg-card-hover: #27272a;
+      --fg-primary: #f4f4f5;
+      --fg-secondary: #a1a1aa;
+      --border: #27272a;
+      
+      --accent-main: #3b82f6;
+      --accent-inhale: #60a5fa; 
+      --accent-exhale: #a78bfa; 
+      
+      --coh-high: #34d399; /* Green */
+      --coh-med: #fbbf24;  /* Yellow */
+      --coh-low: #f87171;  /* Red */
+      
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background-color: var(--bg-dark);
+      color: var(--fg-primary);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* Hidden technical elements */
+    #hidden-stage {
+      position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none;
+    }
+
+    /* ============================================================
+       LAYOUT & COMPONENTS
+       ============================================================ */
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* TOP NAV */
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; flex-shrink: 0;
+    }
+    .brand { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .brand span { color: var(--accent-main); }
+    
+    .header-actions { display: flex; gap: 8px; }
+    .btn-icon {
+      background: var(--bg-card); border: 1px solid var(--border); color: var(--fg-secondary);
+      cursor: pointer; width: 36px; height: 36px; border-radius: 50%;
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover, .btn-icon.active { background: var(--fg-primary); color: var(--bg-dark); }
+
+    /* SIGNAL QUALITY & RAW WAVEFORM CARD */
+    #signal-card {
+      margin: 0 20px; background: var(--bg-card); border-radius: 16px;
+      border: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .signal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary);
+    }
+    .signal-status-group { display: flex; align-items: center; gap: 6px; }
+    .signal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+    .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 8px var(--coh-high); }
+    
+    #wave-wrapper { width: 100%; height: 40px; position: relative; }
+    #wave-canvas { width: 100%; height: 100%; display: block; }
+    #beat-flash {
+      position: absolute; top: 0; bottom: 0; right: 0; width: 2px;
+      background: var(--accent-main); opacity: 0; transition: opacity 0.1s ease-out;
+    }
+    #beat-flash.flash { opacity: 1; }
+
+    /* MAIN STAGE (PACER) */
+    #main-stage {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+    }
+
+    #pacer-container {
+      position: relative; width: 220px; height: 220px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #pacer-ring {
+      position: absolute; width: 160px; height: 160px; border-radius: 50%;
+      border: 3px solid var(--border);
+      box-shadow: 0 0 0px rgba(0,0,0,0);
+      transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease;
+      will-change: transform;
+    }
+
+    #pacer-content { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    #live-bpm {
+      font-size: 64px; font-weight: 200; line-height: 1; font-family: var(--font-mono); letter-spacing: -2px;
+      transition: opacity 0.3s; color: var(--fg-primary);
+    }
+    #live-bpm.dim { opacity: 0.3; }
+    #pacer-instruction {
+      font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease;
+    }
+
+    /* COHERENCE GAUGE */
+    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px;}
+    #coherence-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
+    #coherence-bar-bg { width: 100%; height: 4px; border-radius: 2px; background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; }
+    #coherence-bar-fill { height: 100%; width: 50%; border-radius: 2px; background: var(--coh-med); transition: width 0.3s ease, background-color 0.5s ease; }
+
+    /* TACHOGRAM CHART */
+    #tachogram-section {
+      flex-shrink: 0; height: 120px; margin: 0 20px 20px; position: relative;
+      background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 12px;
+    }
+    .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); position: absolute; top: 12px; left: 16px; z-index: 2;}
+    #tach-canvas { width: 100%; height: 100%; display: block; }
+
+    /* BOTTOM CONTROLS */
+    #controls { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+    .status-row { display: flex; justify-content: center; align-items: center; font-size: 14px; font-family: var(--font-mono); color: var(--fg-secondary); }
+    
+    #btn-main {
+      width: 100%; height: 54px; border-radius: 27px; border: none;
+      background: var(--fg-primary); color: var(--bg-dark);
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s, opacity 0.2s, background 0.3s;
+    }
+    #btn-main:active { transform: scale(0.97); }
+    #btn-main.active { background: var(--bg-card); color: var(--coh-low); border: 1px solid var(--border); }
+
+    /* MODALS */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(9,9,11,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.show { opacity: 1; pointer-events: auto; }
+    
+    .modal-card {
+      background: var(--bg-card); width: 100%; border-radius: 24px 24px 0 0;
+      padding: 24px 20px calc(20px + var(--safe-bottom)); border-top: 1px solid var(--border);
+      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-backdrop.show .modal-card { transform: translateY(0); }
+
+    .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 24px; color: var(--fg-primary); text-align: center; }
+    
+    .setting-group { margin-bottom: 24px; }
+    .setting-label { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; color: var(--fg-secondary); }
+    .setting-val { font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600; }
+    input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--border); border-radius: 2px; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--fg-primary); margin-top: -8px; cursor: pointer; }
+    
+    .btn-block { width: 100%; padding: 14px; border-radius: 16px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
+    .btn-secondary { background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); }
+    .btn-primary { background: var(--fg-primary); color: var(--bg-dark); }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .stat-box { background: var(--bg-dark); border: 1px solid var(--border); padding: 16px 12px; border-radius: 12px; text-align: center; }
+    .stat-val { font-size: 24px; font-weight: 300; font-family: var(--font-mono); color: var(--fg-primary); margin-bottom: 4px; }
+    .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600;}
+    .stat-highlight { color: var(--coh-high); }
+
+  </style>
+</head>
+<body>
+
+  <!-- HIDDEN STAGE FOR CAMERA ENGINE -->
+  <div id="hidden-stage">
+    <video id="video-feed" playsinline muted></video>
+    <canvas id="sampling-canvas"></canvas>
+  </div>
+
+  <div id="app-container">
+    
+    <header>
+      <div class="brand">KW <span>Biofeedback</span></div>
+      <div class="header-actions">
+        <!-- Audio Toggle Button -->
+        <button class="btn-icon" id="btn-audio" aria-label="Toggle Audio Cues">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path id="audio-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07 M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </button>
+        <!-- Settings Button -->
+        <button class="btn-icon" id="btn-settings" aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SIGNAL QUALITY & RAW WAVEFORM -->
+    <div id="signal-card">
+      <div class="signal-header">
+        <div class="signal-status-group">
+          <div class="signal-dot" id="finger-dot"></div>
+          <span id="finger-text">Awaiting Signal</span>
+        </div>
+        <span id="sqi-text">SQI: --</span>
+      </div>
+      <div id="wave-wrapper">
+        <canvas id="wave-canvas"></canvas>
+        <div id="beat-flash"></div>
+      </div>
+    </div>
+
+    <!-- MAIN PACER STAGE -->
+    <div id="main-stage">
+      <div id="pacer-container">
+        <div id="pacer-ring"></div>
+        <div id="pacer-content">
+          <div id="live-bpm" class="dim">--</div>
+          <div id="pacer-instruction">Ready</div>
+        </div>
+      </div>
+      
+      <div id="coherence-wrapper">
+        <div id="coherence-label">Coherence Score</div>
+        <div id="coherence-bar-bg">
+          <div id="coherence-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TACHOGRAM CHART -->
+    <div id="tachogram-section">
+      <div class="section-label">IBI Tachogram</div>
+      <canvas id="tach-canvas"></canvas>
+    </div>
+
+    <!-- CONTROLS -->
+    <div id="controls">
+      <div class="status-row">
+        <span id="session-time">00:00</span>
+      </div>
+      <button id="btn-main">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Begin Training Session
+      </button>
+    </div>
+
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="modal-card">
+      <div class="modal-header">Training Settings</div>
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Resonant Frequency</span>
+          <span class="setting-val" id="val-bpm">6.0 breaths/min</span>
+        </div>
+        <input type="range" id="slider-bpm" min="4.0" max="8.0" step="0.1" value="6.0">
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Inhale / Exhale Ratio</span>
+          <span class="setting-val">40% / 60%</span>
+        </div>
+        <input type="range" disabled value="40" style="opacity: 0.3;">
+        <p style="font-size: 11px; color: var(--fg-secondary); margin-top: 8px;">Longer exhales maximize parasympathetic vagal response. Ratio is locked for optimal coherence.</p>
+      </div>
+      <button class="btn-block btn-secondary" id="btn-close-settings">Close Settings</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY MODAL -->
+  <div class="modal-backdrop" id="modal-summary">
+    <div class="modal-card">
+      <div class="modal-header">Session Complete</div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-val stat-highlight" id="sum-rmssd">--</div>
+          <div class="stat-lbl">Avg RMSSD (ms)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="sum-coherence">--%</div>
+          <div class="stat-lbl">Coherence Score</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="sum-start-bpm">--</div>
+          <div class="stat-lbl">Starting BPM</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="sum-end-bpm">--</div>
+          <div class="stat-lbl">Ending BPM</div>
+        </div>
+      </div>
+      <button class="btn-block btn-primary" id="btn-export-csv">Export Session Data (CSV)</button>
+      <button class="btn-block btn-secondary" id="btn-close-summary">Done</button>
+    </div>
+  </div>
+
+  <!-- IMPORT CORE VIA SCRIPT TAG -->
+  <script src="epat-core.js"></script>
+
+  <!-- ============================================================
+       BIOFEEDBACK APPLICATION LOGIC
+       ============================================================ -->
+  <script>
+    // ------------------------------------------------------------------
+    // INIT CORE
+    // ------------------------------------------------------------------
+    const { WakeLockCtrl, BeatDetector } = window.ePATCore;
+
+    // UI Elements
+    const ui = {
+      pacerRing: document.getElementById('pacer-ring'),
+      pacerText: document.getElementById('pacer-instruction'),
+      liveBpm: document.getElementById('live-bpm'),
+      fingerDot: document.getElementById('finger-dot'),
+      fingerText: document.getElementById('finger-text'),
+      sqiText: document.getElementById('sqi-text'),
+      btnMain: document.getElementById('btn-main'),
+      sessionTime: document.getElementById('session-time'),
+      cohBar: document.getElementById('coherence-bar-fill'),
+      
+      waveCanvas: document.getElementById('wave-canvas'),
+      beatFlash: document.getElementById('beat-flash'),
+      tachCanvas: document.getElementById('tach-canvas'),
+      
+      btnAudio: document.getElementById('btn-audio'),
+      audioWaves: document.getElementById('audio-waves'),
+
+      btnSettings: document.getElementById('btn-settings'),
+      modalSettings: document.getElementById('modal-settings'),
+      btnCloseSettings: document.getElementById('btn-close-settings'),
+      sliderBpm: document.getElementById('slider-bpm'),
+      valBpm: document.getElementById('val-bpm'),
+      
+      modalSummary: document.getElementById('modal-summary'),
+      btnCloseSummary: document.getElementById('btn-close-summary'),
+      btnExport: document.getElementById('btn-export-csv'),
+      sumRmssd: document.getElementById('sum-rmssd'),
+      sumCoherence: document.getElementById('sum-coherence'),
+      sumStartBpm: document.getElementById('sum-start-bpm'),
+      sumEndBpm: document.getElementById('sum-end-bpm')
+    };
+
+    // State
+    let isSessionActive = false;
+    let targetBpm = 6.0;
+    let inhaleRatio = 0.4; 
+    let pacerRaf = null;
+    let sessionStartTime = 0;
+    
+    // Biofeedback Data
+    let ibiHistory = []; 
+    let currentPacerPhase = 'hold'; 
+    let coherenceScore = 50; 
+    let totalCoherentBeats = 0;
+    let totalValidBeats = 0;
+    let baselineBpm = 0;
+
+    // Waveform & Tachogram Buffers
+    const WAVE_MAX = 120;
+    let waveBuffer = [];
+    const TACH_WINDOW_MS = 40000; 
+
+    // Audio Engine variables
+    let audioEnabled = false;
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    // ------------------------------------------------------------------
+    // CANVAS SETUP & RESIZING
+    // ------------------------------------------------------------------
+    const waveCtx = ui.waveCanvas.getContext('2d');
+    const tachCtx = ui.tachCanvas.getContext('2d');
+
+    function resizeCanvases() {
+      const dpr = window.devicePixelRatio || 1;
+      
+      const wRect = ui.waveCanvas.parentElement.getBoundingClientRect();
+      ui.waveCanvas.width = wRect.width * dpr;
+      ui.waveCanvas.height = wRect.height * dpr;
+      waveCtx.scale(dpr, dpr);
+
+      const tRect = ui.tachCanvas.parentElement.getBoundingClientRect();
+      ui.tachCanvas.width = tRect.width * dpr;
+      ui.tachCanvas.height = tRect.height * dpr;
+      tachCtx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+
+    // ------------------------------------------------------------------
+    // AUDIO ENGINE (Eyes-Closed Guided Breathing)
+    // ------------------------------------------------------------------
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      if (audioEnabled) {
+        ui.btnAudio.classList.add('active');
+        ui.audioWaves.style.display = 'block';
+        if (!audioCtx) initAudio();
+      } else {
+        ui.btnAudio.classList.remove('active');
+        ui.audioWaves.style.display = 'none';
+        stopAudioTone();
+      }
+    }
+
+    function initAudio() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0;
+      gainNode.connect(audioCtx.destination);
+    }
+
+    function updateAudioTone(phaseProgress, isInhale) {
+      if (!audioEnabled || !audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      if (!oscillator) {
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.connect(gainNode);
+        oscillator.start();
+      }
+
+      // Smoothly modulate frequency: Inhale rises 150hz->200hz, Exhale falls 200hz->120hz
+      let freq;
+      if (isInhale) {
+        freq = 150 + (50 * Math.sin(phaseProgress * Math.PI / 2)); // Ease out
+      } else {
+        freq = 200 - (80 * Math.sin(phaseProgress * Math.PI / 2)); // Ease out
+      }
+      
+      // Keep volume low and soothing
+      oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+      gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.1);
+    }
+
+    function stopAudioTone() {
+      if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+      if (oscillator) {
+        setTimeout(() => {
+          if(oscillator) { oscillator.stop(); oscillator.disconnect(); oscillator = null; }
+        }, 200);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // PACER ANIMATION LOOP
+    // ------------------------------------------------------------------
+    function animatePacer() {
+      if (!isSessionActive) return;
+
+      const now = performance.now();
+      const elapsedMs = now - sessionStartTime;
+      
+      // Timer Update
+      const totalSecs = Math.floor(elapsedMs / 1000);
+      const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+      const s = (totalSecs % 60).toString().padStart(2, '0');
+      ui.sessionTime.textContent = `${m}:${s}`;
+
+      // Pacer Logic
+      const cycleMs = (60 / targetBpm) * 1000;
+      const phase = (elapsedMs % cycleMs) / cycleMs; // 0.0 to 1.0
+      
+      let scale = 1;
+      let color = 'var(--border)';
+      let shadow = '';
+      
+      if (phase < inhaleRatio) {
+        // INHALE
+        if (currentPacerPhase !== 'inhale') {
+          currentPacerPhase = 'inhale';
+          ui.pacerText.textContent = "Inhale";
+          ui.pacerText.style.color = "var(--accent-inhale)";
+        }
+        const progress = phase / inhaleRatio; 
+        const ease = 1 - Math.pow(1 - progress, 3);
+        scale = 1 + (ease * 0.4); 
+        color = 'var(--accent-inhale)';
+        shadow = `0 0 30px rgba(96, 165, 250, ${0.2 + (ease * 0.3)})`;
+        updateAudioTone(progress, true);
+      } else {
+        // EXHALE
+        if (currentPacerPhase !== 'exhale') {
+          currentPacerPhase = 'exhale';
+          ui.pacerText.textContent = "Exhale";
+          ui.pacerText.style.color = "var(--accent-exhale)";
+        }
+        const progress = (phase - inhaleRatio) / (1 - inhaleRatio); 
+        const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        scale = 1.4 - (ease * 0.4); 
+        color = 'var(--accent-exhale)';
+        shadow = `0 0 15px rgba(167, 139, 250, ${0.5 - (ease * 0.3)})`;
+        updateAudioTone(progress, false);
+      }
+
+      ui.pacerRing.style.transform = `scale(${scale})`;
+      ui.pacerRing.style.borderColor = color;
+      ui.pacerRing.style.boxShadow = shadow;
+
+      drawTachogram(now);
+      pacerRaf = requestAnimationFrame(animatePacer);
+    }
+
+    // ------------------------------------------------------------------
+    // COHERENCE ENGINE
+    // ------------------------------------------------------------------
+    function evaluateCoherence(ibiMs) {
+      if (ibiHistory.length < 2) return;
+      
+      const prevIbi = ibiHistory[ibiHistory.length - 2].ibi;
+      
+      // ARTIFACT FILTER: Ignore impossible physiological jumps (>30% in one beat)
+      const pctChange = Math.abs(ibiMs - prevIbi) / prevIbi;
+      if (pctChange > 0.30) return; // Skip scoring this beat, it's likely noise
+
+      const dIbi = ibiMs - prevIbi; 
+      let isCoherent = false;
+      
+      // Inhaling = HR up = IBI down (dIbi < 0)
+      if (currentPacerPhase === 'inhale' && dIbi <= 0) isCoherent = true;
+      // Exhaling = HR down = IBI up (dIbi > 0)
+      if (currentPacerPhase === 'exhale' && dIbi >= 0) isCoherent = true;
+
+      totalValidBeats++;
+      if (isCoherent) totalCoherentBeats++;
+
+      // Low pass filter for visual gauge
+      const targetScore = isCoherent ? 100 : 0;
+      coherenceScore = (coherenceScore * 0.8) + (targetScore * 0.2);
+      
+      ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
+      if (coherenceScore >= 70) ui.cohBar.style.backgroundColor = 'var(--coh-high)';
+      else if (coherenceScore >= 40) ui.cohBar.style.backgroundColor = 'var(--coh-med)';
+      else ui.cohBar.style.backgroundColor = 'var(--coh-low)';
+    }
+
+    // ------------------------------------------------------------------
+    // DRAWING: RAW PPG WAVEFORM
+    // ------------------------------------------------------------------
+    function drawWave() {
+      const width = ui.waveCanvas.width / (window.devicePixelRatio || 1);
+      const height = ui.waveCanvas.height / (window.devicePixelRatio || 1);
+      waveCtx.clearRect(0, 0, width, height);
+      if (waveBuffer.length < 2) return;
+
+      let mn = waveBuffer[0], mx = waveBuffer[0];
+      for (const v of waveBuffer) { if (v < mn) mn = v; if (v > mx) mx = v; }
+      const range = mx - mn || 0.001;
+      
+      const pad = 4;
+      const xStep = width / WAVE_MAX;
+      const xOff = (WAVE_MAX - waveBuffer.length) * xStep;
+
+      waveCtx.beginPath();
+      waveCtx.strokeStyle = '#3b82f6';
+      waveCtx.lineWidth = 2;
+      waveCtx.lineJoin = 'round';
+      
+      for (let i = 0; i < waveBuffer.length; i++) {
+        const x = xOff + i * xStep;
+        // Invert Y so peaks are at the top
+        const y = pad + ((mx - waveBuffer[i]) / range) * (height - pad * 2);
+        i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+      }
+      waveCtx.stroke();
+    }
+
+    // ------------------------------------------------------------------
+    // DRAWING: IBI TACHOGRAM
+    // ------------------------------------------------------------------
+    function drawTachogram(now) {
+      const width = ui.tachCanvas.width / (window.devicePixelRatio || 1);
+      const height = ui.tachCanvas.height / (window.devicePixelRatio || 1);
+      tachCtx.clearRect(0, 0, width, height);
+      if (ibiHistory.length < 2) return;
+
+      const visibleData = ibiHistory.filter(d => (now - d.time) < TACH_WINDOW_MS);
+      if (visibleData.length < 2) return;
+
+      const ibis = visibleData.map(d => d.ibi);
+      const minIbi = Math.min(...ibis);
+      const maxIbi = Math.max(...ibis);
+      const range = Math.max(100, maxIbi - minIbi); 
+      const padding = range * 0.2;
+      
+      const yMin = minIbi - padding;
+      const yMax = maxIbi + padding;
+
+      // Draw Grid Lines (Mean)
+      const mean = ibis.reduce((a, b) => a + b, 0) / ibis.length;
+      const meanY = height - (((mean - yMin) / (yMax - yMin)) * height);
+      tachCtx.beginPath();
+      tachCtx.strokeStyle = 'rgba(161, 161, 170, 0.2)';
+      tachCtx.setLineDash([4, 4]);
+      tachCtx.moveTo(0, meanY);
+      tachCtx.lineTo(width, meanY);
+      tachCtx.stroke();
+      tachCtx.setLineDash([]);
+
+      // Draw Smooth Curve
+      tachCtx.beginPath();
+      tachCtx.strokeStyle = '#60a5fa';
+      tachCtx.lineWidth = 2.5;
+      tachCtx.lineJoin = 'round';
+
+      for (let i = 0; i < visibleData.length; i++) {
+        const point = visibleData[i];
+        const age = now - point.time;
+        const x = width - ((age / TACH_WINDOW_MS) * width);
+        const y = height - (((point.ibi - yMin) / (yMax - yMin)) * height);
+
+        if (i === 0) tachCtx.moveTo(x, y);
+        else {
+          const prev = visibleData[i-1];
+          const prevAge = now - prev.time;
+          const prevX = width - ((prevAge / TACH_WINDOW_MS) * width);
+          const prevY = height - (((prev.ibi - yMin) / (yMax - yMin)) * height);
+          const cpX = (x + prevX) / 2;
+          tachCtx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+        }
+      }
+      tachCtx.stroke();
+
+      // Draw dots on beats
+      for (let i = 0; i < visibleData.length; i++) {
+        const point = visibleData[i];
+        const age = now - point.time;
+        const x = width - ((age / TACH_WINDOW_MS) * width);
+        const y = height - (((point.ibi - yMin) / (yMax - yMin)) * height);
+        
+        tachCtx.beginPath();
+        tachCtx.fillStyle = '#ffffff';
+        tachCtx.arc(x, y, 3, 0, Math.PI * 2);
+        tachCtx.fill();
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // EPAT CALLBACKS
+    // ------------------------------------------------------------------
+    function handleFingerChange(present) {
+      if (present) {
+        ui.fingerDot.classList.add('active');
+        ui.fingerText.textContent = "Signal Good";
+        ui.liveBpm.classList.remove('dim');
+      } else {
+        ui.fingerDot.classList.remove('active');
+        ui.fingerText.textContent = "Adjust Finger";
+        ui.liveBpm.classList.add('dim');
+        ui.liveBpm.textContent = "--";
+        waveBuffer = [];
+        drawWave();
+      }
+    }
+
+    function handleBeat(beat) {
+      if (!isSessionActive) return;
+      
+      const ibiMs = beat.instantPeriod * 1000;
+      const bpm = Math.round(beat.averageBPM);
+      
+      ui.liveBpm.textContent = bpm;
+      
+      if (baselineBpm === 0 && ibiHistory.length > 3) {
+        baselineBpm = bpm;
+      }
+
+      ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs), bpm: bpm });
+      evaluateCoherence(ibiMs);
+
+      // Trigger UI flash
+      ui.beatFlash.classList.add('flash');
+      setTimeout(() => ui.beatFlash.classList.remove('flash'), 80);
+    }
+
+    function handlePPGSample(sample) {
+      waveBuffer.push(sample);
+      if (waveBuffer.length > WAVE_MAX) waveBuffer.shift();
+      requestAnimationFrame(drawWave);
+    }
+
+    function handleSQI(sqi) {
+      const pct = (sqi * 100).toFixed(1);
+      ui.sqiText.textContent = `SQI: ${pct}%`;
+      ui.sqiText.style.color = sqi > 0.005 ? 'var(--coh-high)' : 'var(--coh-med)';
+    }
+
+    // ------------------------------------------------------------------
+    // SESSION MANAGEMENT
+    // ------------------------------------------------------------------
+    async function startSession() {
+      ibiHistory = []; waveBuffer = [];
+      coherenceScore = 50; totalCoherentBeats = 0; totalValidBeats = 0; baselineBpm = 0;
+      
+      ui.cohBar.style.width = '50%';
+      ui.cohBar.style.backgroundColor = 'var(--coh-med)';
+      
+      ui.btnMain.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
+      ui.btnMain.classList.add('active');
+
+      await WakeLockCtrl.request();
+
+      try {
+        await BeatDetector.start({
+          video: document.getElementById('video-feed'),
+          canvas: document.getElementById('sampling-canvas'),
+          onBeatCb: handleBeat,
+          onFingerChangeCb: handleFingerChange,
+          onPPGSampleCb: handlePPGSample,
+          onSqiUpdateCb: handleSQI
+        });
+        
+        isSessionActive = true;
+        sessionStartTime = performance.now();
+        pacerRaf = requestAnimationFrame(animatePacer);
+        
+      } catch (err) {
+        console.error(err);
+        alert("Camera and Torch required to measure heart rate. Please allow permissions.");
+        stopSession(false);
+      }
+    }
+
+    async function stopSession(showSummary = true) {
+      isSessionActive = false;
+      cancelAnimationFrame(pacerRaf);
+      stopAudioTone();
+      await BeatDetector.stop();
+      WakeLockCtrl.release();
+
+      ui.btnMain.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training Session`;
+      ui.btnMain.classList.remove('active');
+      
+      ui.pacerRing.style.transform = `scale(1)`;
+      ui.pacerRing.style.borderColor = 'var(--border)';
+      ui.pacerRing.style.boxShadow = 'none';
+      ui.pacerText.textContent = "Ready";
+      ui.pacerText.style.color = "var(--fg-secondary)";
+      
+      ui.fingerDot.classList.remove('active');
+      ui.fingerText.textContent = "Awaiting Signal";
+      ui.sqiText.textContent = "SQI: --";
+      ui.sqiText.style.color = "var(--fg-secondary)";
+      ui.liveBpm.textContent = "--";
+      ui.liveBpm.classList.add('dim');
+
+      if (showSummary && ibiHistory.length > 5) {
+        generateSummary();
+      }
+    }
+
+    function generateSummary() {
+      // 1. Calculate RMSSD (Root Mean Square of Successive Differences)
+      let sumSq = 0;
+      let validDiffs = 0;
+      for (let i = 1; i < ibiHistory.length; i++) {
+        const diff = ibiHistory[i].ibi - ibiHistory[i-1].ibi;
+        // Ignore extreme ectopic jumps for RMSSD sanity
+        if (Math.abs(diff) < 500) { 
+          sumSq += (diff * diff);
+          validDiffs++;
+        }
+      }
+      const rmssd = validDiffs > 0 ? Math.sqrt(sumSq / validDiffs) : 0;
+      
+      // 2. Coherence %
+      const coherencePct = totalValidBeats > 0 ? Math.round((totalCoherentBeats / totalValidBeats) * 100) : 0;
+
+      // 3. Ending BPM
+      const endBpm = ibiHistory[ibiHistory.length - 1].bpm;
+
+      ui.sumRmssd.textContent = Math.round(rmssd);
+      ui.sumCoherence.textContent = `${coherencePct}%`;
+      ui.sumStartBpm.textContent = baselineBpm || "--";
+      ui.sumEndBpm.textContent = endBpm;
+
+      ui.modalSummary.classList.add('show');
+    }
+
+    function exportSessionCSV() {
+      if (ibiHistory.length === 0) return;
+      
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Timestamp_MS,InterBeatInterval_MS,AverageBPM\n";
+      
+      const startT = ibiHistory[0].time;
+      ibiHistory.forEach(beat => {
+        const relativeTime = Math.round(beat.time - startT);
+        csvContent += `${relativeTime},${beat.ibi},${beat.bpm}\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `KW_Biofeedback_Session_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ------------------------------------------------------------------
+    // EVENT LISTENERS
+    // ------------------------------------------------------------------
+    ui.btnMain.addEventListener('click', () => {
+      if (isSessionActive) stopSession(true);
+      else startSession();
+    });
+
+    ui.btnAudio.addEventListener('click', toggleAudio);
+    ui.btnSettings.addEventListener('click', () => ui.modalSettings.classList.add('show'));
+    ui.btnCloseSettings.addEventListener('click', () => ui.modalSettings.classList.remove('show'));
+    
+    ui.btnCloseSummary.addEventListener('click', () => {
+      ui.modalSummary.classList.remove('show');
+      // Reset charts behind the scenes
+      waveBuffer = []; drawWave();
+      ibiHistory = []; drawTachogram(performance.now());
+    });
+    
+    ui.btnExport.addEventListener('click', exportSessionCSV);
+
+    ui.sliderBpm.addEventListener('input', (e) => {
+      targetBpm = parseFloat(e.target.value);
+      ui.valBpm.textContent = `${targetBpm.toFixed(1)} breaths/min`;
+    });
+
+    // Default audio toggle UI setup
+    ui.audioWaves.style.display = 'none';
+
+  </script>
+</body>
+</html>
