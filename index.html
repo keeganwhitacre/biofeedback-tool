@@ -184,6 +184,29 @@
       border-radius: 10px; margin-bottom: 16px; font-size: 12px; color: var(--coh-high); font-weight: 600;
     }
     #rf-saved-badge.show { display: flex; }
+
+/* CAMERA GUIDE */
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    }
+    #camera-guide {
+      position: absolute; inset: 0; z-index: 15;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--bg-dark); border-radius: 50%;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    #camera-guide.active { opacity: 1; pointer-events: auto; }
+    .video-circle {
+      width: 76px; height: 76px; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--accent-main); margin-bottom: 12px;
+      animation: pulse-border 2s infinite; background: #000;
+    }
+    .video-circle video { width: 100%; height: 100%; object-fit: cover; }
+    .guide-text { font-size: 13px; color: var(--fg-primary); font-weight: 700; text-align: center; margin-bottom: 4px; }
+    .guide-subtext { font-size: 11px; color: var(--fg-secondary); text-align: center; max-width: 140px; line-height: 1.4; }
+    
   </style>
 </head>
 <body>
@@ -228,6 +251,7 @@
       </div>
     </div>
 
+    <div id="app-container">
     <div id="main-stage">
       <div id="pacer-container">
         <div id="pacer-ring"></div>
@@ -235,6 +259,15 @@
           <div id="live-bpm" class="dim">--</div>
           <div id="pacer-instruction">Ready</div>
         </div>
+        
+        <div id="camera-guide">
+          <div class="video-circle">
+            <video id="video-feed" playsinline muted></video>
+          </div>
+          <div class="guide-text">Cover the camera</div>
+          <div class="guide-subtext">Center your fingertip over the rear lens.</div>
+        </div>
+
         <div id="baseline-overlay">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           <div class="baseline-text">Breathe naturally.<br>Establishing baseline...</div>
@@ -396,6 +429,7 @@
       poincareCanvas:  document.getElementById('poincare-canvas'),
       pcSdReadout:     document.getElementById('pc-sd-readout'),
       baselineOverlay: document.getElementById('baseline-overlay'),
+      cameraGuide:     document.getElementById('camera-guide'),
       tabTach:         document.getElementById('tab-tach'),
       tabPoincare:     document.getElementById('tab-poincare'),
       panelTach:       document.getElementById('panel-tach'),
@@ -791,28 +825,44 @@
     }
 
     function drawTachogram(now) {
-      const W=ui.tachCanvas.width/(window.devicePixelRatio||1), H=ui.tachCanvas.height/(window.devicePixelRatio||1);
+      const W=ui.tachCanvas.width/(window.devicePixelRatio||1);
+      const H=ui.tachCanvas.height/(window.devicePixelRatio||1);
       tachCtx.clearRect(0,0,W,H);
+      
       const vis = ibiHistory.filter(d=>(now-d.time)<TACH_WINDOW_MS);
       if (vis.length < 2) return;
+      
       const ibis=vis.map(d=>d.ibi), mn=Math.min(...ibis), mx=Math.max(...ibis);
       const range=Math.max(100,mx-mn), pad=range*0.2, yMin=mn-pad, yMax=mx+pad;
+      
+      // NEW: Internal canvas padding to prevent top/bottom clipping
+      const plotPadY = 16; 
+      const drawH = H - (plotPadY * 2);
+      
       const mean=ibis.reduce((a,b)=>a+b,0)/ibis.length;
-      const mY=H-((mean-yMin)/(yMax-yMin))*H;
+      const mY = plotPadY + drawH - ((mean-yMin)/(yMax-yMin)) * drawH;
+      
       tachCtx.beginPath(); tachCtx.strokeStyle='rgba(161,161,170,0.2)'; tachCtx.setLineDash([4,4]);
       tachCtx.moveTo(0,mY); tachCtx.lineTo(W,mY); tachCtx.stroke(); tachCtx.setLineDash([]);
+      
       tachCtx.beginPath(); tachCtx.strokeStyle='#60a5fa'; tachCtx.lineWidth=2.5; tachCtx.lineJoin='round';
       vis.forEach((pt,i) => {
-        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W, y=H-((pt.ibi-yMin)/(yMax-yMin))*H;
+        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
+        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yMax-yMin)) * drawH;
         if (i===0) { tachCtx.moveTo(x,y); return; }
+        
         const prev=vis[i-1], pAge=now-prev.time;
-        const px=W-(pAge/TACH_WINDOW_MS)*W, py=H-((prev.ibi-yMin)/(yMax-yMin))*H, cx=(x+px)/2;
+        const px=W-(pAge/TACH_WINDOW_MS)*W;
+        const py = plotPadY + drawH - ((prev.ibi-yMin)/(yMax-yMin)) * drawH;
+        const cx=(x+px)/2;
         tachCtx.bezierCurveTo(cx,py,cx,y,x,y);
       });
       tachCtx.stroke();
+      
       vis.forEach(pt => {
-        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W, y=H-((pt.ibi-yMin)/(yMax-yMin))*H;
-        tachCtx.beginPath(); tachCtx.fillStyle='#fff'; tachCtx.arc(x,y,2.5,0,Math.PI*2); tachCtx.fill();
+        const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
+        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yMax-yMin)) * drawH;
+        tachCtx.beginPath(); tachCtx.fillStyle='#fff'; tachCtx.arc(x,y,3,0,Math.PI*2); tachCtx.fill();
       });
     }
 
@@ -852,8 +902,16 @@
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
       ui.fingerText.textContent = present ? 'Signal Good' : 'Adjust Finger';
-      if (!present) { ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent='--'; waveBuffer=[]; drawWave(); }
-      else ui.liveBpm.classList.remove('dim');
+      if (!present) { 
+        ui.liveBpm.classList.add('dim'); 
+        ui.liveBpm.textContent='--'; 
+        waveBuffer=[]; 
+        drawWave(); 
+        if (isSessionActive) ui.cameraGuide.classList.add('active'); // Show guide if finger slips
+      } else { 
+        ui.liveBpm.classList.remove('dim');
+        ui.cameraGuide.classList.remove('active'); // Hide guide instantly
+      }
     }
 
     function handleBeat(beat) {
@@ -888,7 +946,9 @@
       ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
       if (isBaselineMode) { ui.baselineOverlay.classList.add('active'); ui.modalSettings.classList.remove('show'); }
+      else { ui.cameraGuide.classList.add('active'); }
       await WakeLockCtrl.request();
+      
       try {
         await BeatDetector.start({
           video: document.getElementById('video-feed'), canvas: document.getElementById('sampling-canvas'),
@@ -909,6 +969,7 @@
       ui.pacerRing.style.transform='scale(1)'; ui.pacerRing.style.borderColor='var(--border)'; ui.pacerRing.style.boxShadow='none';
       ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--fg-secondary)';
       ui.baselineOverlay.classList.remove('active');
+      ui.cameraGuide.classList.remove('active');
       ui.fingerDot.classList.remove('active'); ui.fingerText.textContent='Awaiting Signal';
       ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--fg-secondary)';
       ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
