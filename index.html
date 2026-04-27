@@ -203,7 +203,14 @@
       border: 2px solid var(--accent-main); margin-bottom: 12px;
       animation: pulse-border 2s infinite; background: #000;
     }
-    .video-circle video { width: 100%; height: 100%; object-fit: cover; }
+    .video-circle video { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      /* Force it visible over the core library defaults */
+      display: block !important; 
+      opacity: 1 !important; 
+    }
     .guide-text { font-size: 13px; color: var(--fg-primary); font-weight: 700; text-align: center; margin-bottom: 4px; }
     .guide-subtext { font-size: 11px; color: var(--fg-secondary); text-align: center; max-width: 140px; line-height: 1.4; }
     
@@ -262,7 +269,7 @@
         
         <div id="camera-guide">
           <div class="video-circle">
-            <video id="video-feed" playsinline muted></video>
+            <video id="video-feed" autoplay playsinline muted></video>
           </div>
           <div class="guide-text">Cover the camera</div>
           <div class="guide-subtext">Center your fingertip over the rear lens.</div>
@@ -492,6 +499,8 @@
     // ----------------------------------------------------------------
     let isSessionActive = false;
     let isBaselineMode  = false;
+    let calibrationTimeout = null;
+    let isCalibrating = false;
     let isRfMode        = false;
     let activeProtocol  = 'resonant';
     let targetBpm       = 6.0;
@@ -832,15 +841,25 @@
       const vis = ibiHistory.filter(d=>(now-d.time)<TACH_WINDOW_MS);
       if (vis.length < 2) return;
       
-      const ibis=vis.map(d=>d.ibi), mn=Math.min(...ibis), mx=Math.max(...ibis);
-      const range=Math.max(100,mx-mn), pad=range*0.2, yMin=mn-pad, yMax=mx+pad;
+      const ibis=vis.map(d=>d.ibi);
+      const mean = ibis.reduce((a,b)=>a+b,0)/ibis.length;
       
-      // NEW: Internal canvas padding to prevent top/bottom clipping
+      // Calculate max deviation to force the mean strictly to the vertical center
+      let maxDev = 0;
+      for (const v of ibis) {
+        const dev = Math.abs(v - mean);
+        if (dev > maxDev) maxDev = dev;
+      }
+      
+      // Ensure a minimum vertical scale (+/- 50ms) and add 20% visual padding
+      const yRange = Math.max(50, maxDev * 1.2); 
+      const yMin = mean - yRange;
+      
       const plotPadY = 16; 
       const drawH = H - (plotPadY * 2);
       
-      const mean=ibis.reduce((a,b)=>a+b,0)/ibis.length;
-      const mY = plotPadY + drawH - ((mean-yMin)/(yMax-yMin)) * drawH;
+      // Baseline is now mathematically locked to the exact center of the drawing area
+      const mY = plotPadY + (drawH / 2);
       
       tachCtx.beginPath(); tachCtx.strokeStyle='rgba(161,161,170,0.2)'; tachCtx.setLineDash([4,4]);
       tachCtx.moveTo(0,mY); tachCtx.lineTo(W,mY); tachCtx.stroke(); tachCtx.setLineDash([]);
@@ -848,12 +867,13 @@
       tachCtx.beginPath(); tachCtx.strokeStyle='#60a5fa'; tachCtx.lineWidth=2.5; tachCtx.lineJoin='round';
       vis.forEach((pt,i) => {
         const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
-        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yMax-yMin)) * drawH;
+        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yRange*2)) * drawH;
+        
         if (i===0) { tachCtx.moveTo(x,y); return; }
         
         const prev=vis[i-1], pAge=now-prev.time;
         const px=W-(pAge/TACH_WINDOW_MS)*W;
-        const py = plotPadY + drawH - ((prev.ibi-yMin)/(yMax-yMin)) * drawH;
+        const py = plotPadY + drawH - ((prev.ibi-yMin)/(yRange*2)) * drawH;
         const cx=(x+px)/2;
         tachCtx.bezierCurveTo(cx,py,cx,y,x,y);
       });
@@ -861,7 +881,7 @@
       
       vis.forEach(pt => {
         const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
-        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yMax-yMin)) * drawH;
+        const y = plotPadY + drawH - ((pt.ibi-yMin)/(yRange*2)) * drawH;
         tachCtx.beginPath(); tachCtx.fillStyle='#fff'; tachCtx.arc(x,y,3,0,Math.PI*2); tachCtx.fill();
       });
     }
@@ -901,16 +921,40 @@
     // ----------------------------------------------------------------
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
-      ui.fingerText.textContent = present ? 'Signal Good' : 'Adjust Finger';
+      const guideText = ui.cameraGuide.querySelector('.guide-text');
+      const guideSubtext = ui.cameraGuide.querySelector('.guide-subtext');
+
       if (!present) { 
+        // Finger removed: reset and show guide immediately
+        clearTimeout(calibrationTimeout);
+        isCalibrating = false;
+        ui.fingerText.textContent = 'Adjust Finger';
         ui.liveBpm.classList.add('dim'); 
-        ui.liveBpm.textContent='--'; 
-        waveBuffer=[]; 
+        ui.liveBpm.textContent = '--'; 
+        waveBuffer = []; 
         drawWave(); 
-        if (isSessionActive) ui.cameraGuide.classList.add('active'); // Show guide if finger slips
+        
+        if (isSessionActive) {
+          ui.cameraGuide.classList.add('active'); 
+          if (guideText) guideText.textContent = 'Cover the camera';
+          if (guideSubtext) guideSubtext.textContent = 'Center your fingertip over the rear lens.';
+        }
       } else { 
-        ui.liveBpm.classList.remove('dim');
-        ui.cameraGuide.classList.remove('active'); // Hide guide instantly
+        // Finger detected: Start 3-second calibration phase
+        ui.fingerText.textContent = 'Calibrating...';
+        isCalibrating = true;
+        
+        if (guideText) guideText.textContent = 'Hold still';
+        if (guideSubtext) guideSubtext.textContent = 'Illuminating capillaries...';
+        
+        calibrationTimeout = setTimeout(() => {
+          if (isCalibrating && isSessionActive) {
+            ui.fingerText.textContent = 'Signal Good';
+            ui.liveBpm.classList.remove('dim');
+            ui.cameraGuide.classList.remove('active'); // Fade out video
+            isCalibrating = false;
+          }
+        }, 3000); // 3-second visual calibration delay
       }
     }
 
