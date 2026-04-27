@@ -4,24 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>KW Biofeedback</title>
-  <meta name="theme-color" content="#0a0a0c">
+  <meta name="theme-color" content="#0c0a09">
   <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #09090b;
-      --bg-card: #18181b;
-      --bg-card-hover: #27272a;
-      --fg-primary: #f4f4f5;
-      --fg-secondary: #a1a1aa;
-      --border: #27272a;
-      --accent-main: #3b82f6;
-      --accent-inhale: #60a5fa;
-      --accent-exhale: #a78bfa;
-      --coh-high: #34d399;
-      --coh-med: #fbbf24;
-      --coh-low: #f87171;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      /* Warm dark palette — less clinical, more inhabitable */
+      --bg-dark: #0c0a09;
+      --bg-card: #161310;
+      --bg-card-hover: #1f1b17;
+      --fg-primary: #f5f0ea;
+      --fg-secondary: #9a8f84;
+      --border: #2a2420;
+
+      /* Single coherence hue — shifts cool→warm with coherence */
+      --accent-main: #e8a87c;        /* warm amber — brand */
+      --accent-inhale: #7eb8d4;      /* cool blue — inhale */
+      --accent-exhale: #c4a882;      /* warm sand — exhale */
+
+      /* Coherence spectrum: low=cool blue → mid=amber → high=warm green */
+      --coh-high: #7ec4a0;           /* sage green */
+      --coh-med: #d4a574;            /* amber */
+      --coh-low: #c47a6a;            /* terracotta */
+
+      --font-sans: 'Instrument Serif', Georgia, serif;
+      --font-mono: 'DM Mono', ui-monospace, monospace;
       --safe-top: env(safe-area-inset-top, 20px);
       --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
@@ -32,171 +41,105 @@
       touch-action: manipulation; user-select: none; -webkit-user-select: none;
       height: 100%; width: 100%;
     }
+
+    /* Subtle warm grain texture overlay */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
     #hidden-stage { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
+    #app-container { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); position: relative; z-index: 1; }
 
-    #app-container { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+    /* ── HEADER ── */
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; flex-shrink: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    header.hidden { opacity: 0; pointer-events: none; transform: translateY(-8px); }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; flex-shrink: 0; }
-    .brand { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-    .brand span { color: var(--accent-main); }
+    .brand { font-size: 18px; font-weight: 400; letter-spacing: 0.3px; font-style: italic; color: var(--fg-primary); }
+    .brand span { color: var(--accent-main); font-style: normal; font-family: var(--font-mono); font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
     .header-actions { display: flex; gap: 8px; }
     .btn-icon {
       background: var(--bg-card); border: 1px solid var(--border); color: var(--fg-secondary);
-      cursor: pointer; width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; width: 34px; height: 34px; border-radius: 50%;
       transition: all 0.2s; display: flex; align-items: center; justify-content: center;
     }
-    .btn-icon:hover, .btn-icon.active { background: var(--fg-primary); color: var(--bg-dark); }
+    .btn-icon:hover, .btn-icon.active { background: var(--accent-main); color: var(--bg-dark); border-color: var(--accent-main); }
 
+    /* ── SIGNAL CARD ── */
     #signal-card {
-      margin: 0 20px; background: var(--bg-card); border-radius: 16px;
-      border: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
+      margin: 0 20px 12px; background: var(--bg-card); border-radius: 14px;
+      border: 1px solid var(--border); padding: 10px 14px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: opacity 0.5s ease, transform 0.5s ease;
     }
-    .signal-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); }
+    #signal-card.hidden { opacity: 0; transform: translateY(-4px); pointer-events: none; }
+    .signal-header { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.2px; color: var(--fg-secondary); font-family: var(--font-mono); }
     .signal-status-group { display: flex; align-items: center; gap: 6px; }
-    .signal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
-    .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 8px var(--coh-high); }
-    #wave-wrapper { width: 100%; height: 40px; position: relative; }
+    .signal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+    .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 6px var(--coh-high); }
+    #wave-wrapper { width: 100%; height: 36px; position: relative; }
     #wave-canvas { width: 100%; height: 100%; display: block; }
-    #beat-flash { position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--accent-main); opacity: 0; transition: opacity 0.1s ease-out; }
+    #beat-flash { position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--accent-main); opacity: 0; transition: opacity 0.08s ease-out; border-radius: 1px; }
     #beat-flash.flash { opacity: 1; }
 
+    /* ── MAIN STAGE ── */
     #main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+
+    /* ── RMSSD TREND STRIP ── */
+    #trend-strip {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+      padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 20px; opacity: 0.85;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    #trend-strip.hidden { opacity: 0; pointer-events: none; transform: translateY(4px); }
+    #trend-strip.no-data { display: none; }
+    .trend-label { font-size: 10px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); }
+    .trend-value { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 500; }
+    .trend-delta { font-size: 11px; font-family: var(--font-mono); }
+    .trend-delta.up { color: var(--coh-high); }
+    .trend-delta.down { color: var(--coh-low); }
+    .trend-delta.flat { color: var(--fg-secondary); }
+
+    /* ── PACER ── */
     #pacer-container { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+
+    /* Pacer fill — low opacity, breathes with the ring */
+    #pacer-fill {
+      position: absolute; width: 154px; height: 154px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(126,184,212,0.08) 0%, transparent 70%);
+      transform: scale(1); transition: transform 0.1s linear, background 1s ease;
+      will-change: transform;
+    }
     #pacer-ring {
-      position: absolute; width: 160px; height: 160px; border-radius: 50%;
-      border: 3px solid var(--border); box-shadow: 0 0 0px rgba(0,0,0,0);
-      transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease; will-change: transform;
+      position: absolute; width: 154px; height: 154px; border-radius: 50%;
+      border: 4px solid var(--border);
+      transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease;
+      will-change: transform;
     }
     #pacer-content { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    #live-bpm { font-size: 64px; font-weight: 200; line-height: 1; font-family: var(--font-mono); letter-spacing: -2px; transition: opacity 0.3s; color: var(--fg-primary); }
-    #live-bpm.dim { opacity: 0.3; }
-    #pacer-instruction { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease; }
-
-    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px; }
-    #coherence-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
-    #coherence-bar-bg { width: 100%; height: 4px; border-radius: 2px; background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; }
-    #coherence-bar-fill { height: 100%; width: 50%; border-radius: 2px; background: var(--coh-med); transition: width 0.3s ease, background-color 0.5s ease; }
-
-    /* CHART SECTION */
-    #chart-section {
-      flex-shrink: 0; height: 130px; margin: 0 20px 12px; position: relative;
-      background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);
-      display: flex; flex-direction: column; overflow: hidden;
+    #live-bpm {
+      font-size: 62px; font-weight: 300; line-height: 1;
+      font-family: var(--font-mono); letter-spacing: -3px;
+      transition: opacity 0.3s; color: var(--fg-primary);
     }
-    .chart-tab-bar { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .chart-tab {
-      flex: 1; padding: 7px 0; font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 1px; color: var(--fg-secondary); cursor: pointer; background: none;
-      border: none; transition: color 0.2s, background 0.2s;
-    }
-    .chart-tab.active { color: var(--accent-main); background: rgba(59,130,246,0.06); }
-    .chart-panel { flex: 1; position: relative; display: none; padding: 8px 12px; min-height: 0; }
-    .chart-panel.active { display: flex; flex-direction: column; }
-    .chart-panel canvas { flex: 1; width: 100%; min-height: 0; display: block; }
-    #pc-sd-readout {
-      position: absolute; top: 8px; right: 10px; font-size: 10px; font-family: var(--font-mono);
-      color: var(--fg-secondary); line-height: 1.6; text-align: right; white-space: pre;
+    #live-bpm.dim { opacity: 0.25; }
+    #pacer-instruction {
+      font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 2.5px;
+      color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease;
+      font-family: var(--font-mono);
     }
 
-    #controls { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: var(--font-mono); color: var(--fg-secondary); }
-    .status-tip { font-size: 11px; color: var(--fg-secondary); opacity: 0.6; }
-    #btn-main {
-      width: 100%; height: 54px; border-radius: 27px; border: none;
-      background: var(--fg-primary); color: var(--bg-dark);
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: transform 0.1s, opacity 0.2s, background 0.3s;
-    }
-    #btn-main:active { transform: scale(0.97); }
-    #btn-main.active { background: var(--bg-card); color: var(--coh-low); border: 1px solid var(--border); }
-
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(9,9,11,0.85);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100;
-      display: flex; align-items: flex-end; justify-content: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-    }
-    .modal-backdrop.show { opacity: 1; pointer-events: auto; }
-    .modal-card {
-      background: var(--bg-card); width: 100%; border-radius: 24px 24px 0 0;
-      padding: 24px 20px calc(20px + var(--safe-bottom)); border-top: 1px solid var(--border);
-      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      pointer-events: auto; max-height: 90vh; overflow-y: auto;
-    }
-    .modal-backdrop.show .modal-card { transform: translateY(0); }
-    .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 24px; color: var(--fg-primary); text-align: center; }
-    .setting-group { margin-bottom: 24px; }
-    .setting-label { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; color: var(--fg-secondary); }
-    .setting-val { font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600; }
-    input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
-    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--border); border-radius: 2px; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--fg-primary); margin-top: -8px; cursor: pointer; }
-    .btn-block { width: 100%; padding: 14px; border-radius: 16px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
-    .btn-secondary { background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); }
-    .btn-primary { background: var(--fg-primary); color: var(--bg-dark); }
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-    .stat-box { background: var(--bg-dark); border: 1px solid var(--border); padding: 16px 12px; border-radius: 12px; text-align: center; }
-    .stat-val { font-size: 24px; font-weight: 300; font-family: var(--font-mono); color: var(--fg-primary); margin-bottom: 4px; }
-    .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
-    .stat-highlight { color: var(--coh-high); }
-
-    .history-list { max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .history-card { background: var(--bg-dark); border: 1px solid var(--border); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .hc-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-    .hc-date { font-size: 11px; color: var(--fg-secondary); }
-    .hc-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
-    .hc-right { display: flex; gap: 12px; text-align: right; flex-shrink: 0; }
-    .hc-stat { display: flex; flex-direction: column; }
-    .hc-stat-val { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600; }
-    .hc-stat-lbl { font-size: 9px; text-transform: uppercase; color: var(--fg-secondary); }
-
-    #baseline-overlay {
-      position: absolute; inset: 0; background: var(--bg-card); z-index: 10;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s; border-radius: 50%;
-    }
-    #baseline-overlay.active { opacity: 1; pointer-events: auto; }
-    .baseline-text { font-size: 14px; color: var(--fg-secondary); text-align: center; margin-top: 16px; font-weight: 600; }
-
-    /* RF FINDER */
-    #rf-progress-bar-bg { width: 100%; height: 6px; border-radius: 3px; background: var(--border); margin: 16px 0; overflow: hidden; }
-    #rf-progress-bar-fill { height: 100%; border-radius: 3px; background: var(--accent-main); width: 0%; transition: width 0.5s ease; }
-    #rf-step-display { display: flex; justify-content: space-around; margin-bottom: 16px; }
-    .rf-step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .rf-step-bpm { font-size: 13px; font-family: var(--font-mono); color: var(--fg-secondary); }
-    .rf-step-bar-bg { width: 32px; height: 48px; background: var(--border); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; }
-    .rf-step-bar-fill { width: 100%; background: var(--accent-main); border-radius: 4px; transition: height 0.4s ease; height: 0%; }
-    .rf-step-item.current .rf-step-bpm { color: var(--accent-main); font-weight: 700; }
-    .rf-step-item.winner .rf-step-bpm { color: var(--coh-high); font-weight: 700; }
-    .rf-step-item.winner .rf-step-bar-fill { background: var(--coh-high); }
-    #rf-status-text { font-size: 14px; color: var(--fg-secondary); text-align: center; min-height: 44px; line-height: 1.5; }
-    #rf-result-box {
-      background: var(--bg-dark); border: 1px solid var(--coh-high); border-radius: 12px;
-      padding: 16px; text-align: center; display: none; margin-bottom: 16px;
-    }
-    #rf-result-val { font-size: 32px; font-weight: 200; font-family: var(--font-mono); color: var(--coh-high); }
-    #rf-result-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); margin-top: 4px; }
-
-    #rf-saved-badge {
-      display: none; align-items: center; gap: 6px; padding: 8px 12px;
-      background: rgba(52,211,153,0.1); border: 1px solid var(--coh-high);
-      border-radius: 10px; margin-bottom: 16px; font-size: 12px; color: var(--coh-high); font-weight: 600;
-    }
-    #rf-saved-badge.show { display: flex; }
-
-    .btn-delete {
-      background: transparent; border: none; color: var(--fg-secondary);
-      cursor: pointer; padding: 6px; margin-left: 4px; border-radius: 6px;
-      transition: color 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center;
-    }
-    .btn-delete:hover { color: var(--coh-low); background: rgba(248,113,113,0.1); }
-
-/* CAMERA GUIDE */
+    /* Camera guide */
     @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
-      70% { box-shadow: 0 0 0 15px rgba(59,130,246,0); }
-      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+      0% { box-shadow: 0 0 0 0 rgba(232,168,124,0.4); }
+      70% { box-shadow: 0 0 0 12px rgba(232,168,124,0); }
+      100% { box-shadow: 0 0 0 0 rgba(232,168,124,0); }
     }
     #camera-guide {
       position: absolute; inset: 0; z-index: 15;
@@ -206,21 +149,172 @@
     }
     #camera-guide.active { opacity: 1; pointer-events: auto; }
     .video-circle {
-      width: 76px; height: 76px; border-radius: 50%; overflow: hidden;
-      border: 2px solid var(--accent-main); margin-bottom: 12px;
+      width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--accent-main); margin-bottom: 10px;
       animation: pulse-border 2s infinite; background: #000;
     }
-    .video-circle video { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-      /* Force it visible over the core library defaults */
-      display: block !important; 
-      opacity: 1 !important; 
+    .video-circle video { width: 100%; height: 100%; object-fit: cover; display: block !important; opacity: 1 !important; }
+    .guide-text { font-size: 13px; color: var(--fg-primary); font-weight: 400; text-align: center; margin-bottom: 4px; font-style: italic; }
+    .guide-subtext { font-size: 10px; color: var(--fg-secondary); text-align: center; max-width: 140px; line-height: 1.5; font-family: var(--font-mono); }
+
+    /* Baseline overlay */
+    #baseline-overlay {
+      position: absolute; inset: 0; background: var(--bg-card); z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s; border-radius: 50%;
     }
-    .guide-text { font-size: 13px; color: var(--fg-primary); font-weight: 700; text-align: center; margin-bottom: 4px; }
-    .guide-subtext { font-size: 11px; color: var(--fg-secondary); text-align: center; max-width: 140px; line-height: 1.4; }
-    
+    #baseline-overlay.active { opacity: 1; pointer-events: auto; }
+    .baseline-text { font-size: 13px; color: var(--fg-secondary); text-align: center; margin-top: 14px; font-family: var(--font-mono); line-height: 1.6; }
+
+    /* ── COHERENCE ELEMENT ── */
+    #coherence-wrapper {
+      margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      width: 200px;
+    }
+    #coherence-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--fg-secondary); font-weight: 500; font-family: var(--font-mono);
+    }
+    /* Arc-style coherence meter */
+    #coherence-arc-wrapper { position: relative; width: 200px; height: 56px; }
+    #coherence-arc-svg { width: 100%; height: 100%; overflow: visible; }
+    #coherence-arc-bg { fill: none; stroke: var(--border); stroke-width: 5; stroke-linecap: round; }
+    #coherence-arc-fill {
+      fill: none; stroke: var(--coh-med); stroke-width: 5; stroke-linecap: round;
+      transition: stroke-dashoffset 0.4s ease, stroke 0.5s ease;
+    }
+    #coherence-pct-text {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      font-size: 13px; font-family: var(--font-mono); color: var(--fg-primary);
+      font-weight: 500; letter-spacing: 0.5px; white-space: nowrap;
+    }
+
+    /* ── CHART SECTION ── */
+    #chart-section {
+      flex-shrink: 0; height: 130px; margin: 0 20px 12px; position: relative;
+      background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+      transition: opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease;
+    }
+    #chart-section.hidden {
+      opacity: 0; pointer-events: none; max-height: 0; margin-bottom: 0;
+      transform: translateY(4px);
+    }
+    .chart-tab-bar { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .chart-tab {
+      flex: 1; padding: 7px 0; font-size: 10px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--fg-secondary); cursor: pointer; background: none;
+      border: none; transition: color 0.2s, background 0.2s; font-family: var(--font-mono);
+    }
+    .chart-tab.active { color: var(--accent-main); background: rgba(232,168,124,0.05); }
+    .chart-panel { flex: 1; position: relative; display: none; padding: 8px 12px; min-height: 0; }
+    .chart-panel.active { display: flex; flex-direction: column; }
+    .chart-panel canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+    #pc-sd-readout {
+      position: absolute; top: 8px; right: 10px; font-size: 10px; font-family: var(--font-mono);
+      color: var(--fg-secondary); line-height: 1.6; text-align: right; white-space: pre;
+    }
+
+    /* ── CONTROLS ── */
+    #controls { padding: 0 20px 14px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-family: var(--font-mono); color: var(--fg-secondary); }
+    #btn-main {
+      width: 100%; height: 52px; border-radius: 26px; border: none;
+      background: var(--fg-primary); color: var(--bg-dark);
+      font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font-mono);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s, opacity 0.2s, background 0.3s;
+      letter-spacing: 0.5px;
+    }
+    #btn-main:active { transform: scale(0.97); }
+    #btn-main.active { background: var(--bg-card); color: var(--coh-low); border: 1px solid var(--border); }
+
+    /* ── MODALS ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(12,10,9,0.88);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.show { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: var(--bg-card); width: 100%; border-radius: 22px 22px 0 0;
+      padding: 22px 20px calc(20px + var(--safe-bottom)); border-top: 1px solid var(--border);
+      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-backdrop.show .modal-card { transform: translateY(0); }
+    .modal-header {
+      font-size: 20px; font-weight: 400; margin-bottom: 22px; color: var(--fg-primary);
+      text-align: center; font-style: italic;
+    }
+    .setting-group { margin-bottom: 22px; }
+    .setting-label { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: var(--fg-secondary); font-family: var(--font-mono); }
+    .setting-val { color: var(--fg-primary); font-weight: 500; }
+    input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 3px; background: var(--border); border-radius: 2px; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--accent-main); margin-top: -8.5px; cursor: pointer; }
+
+    /* Toggle switch */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .toggle-label { font-size: 12px; color: var(--fg-secondary); font-family: var(--font-mono); }
+    .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0; background: var(--border); border-radius: 12px;
+      transition: background 0.3s;
+    }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      background: var(--fg-secondary); border-radius: 50%; transition: transform 0.3s, background 0.3s;
+    }
+    .toggle-switch input:checked ~ .toggle-track { background: var(--accent-main); }
+    .toggle-switch input:checked ~ .toggle-thumb { transform: translateX(20px); background: var(--bg-dark); }
+
+    .btn-block { width: 100%; padding: 13px; border-radius: 14px; border: none; font-weight: 500; font-size: 13px; cursor: pointer; margin-bottom: 10px; font-family: var(--font-mono); letter-spacing: 0.3px; }
+    .btn-secondary { background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); }
+    .btn-primary { background: var(--fg-primary); color: var(--bg-dark); }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+    .stat-box { background: var(--bg-dark); border: 1px solid var(--border); padding: 14px 12px; border-radius: 12px; text-align: center; }
+    .stat-val { font-size: 26px; font-weight: 300; font-family: var(--font-mono); color: var(--fg-primary); margin-bottom: 4px; letter-spacing: -1px; }
+    .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--fg-secondary); font-weight: 500; font-family: var(--font-mono); }
+    .stat-highlight { color: var(--coh-high); }
+
+    .history-list { max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .history-card { background: var(--bg-dark); border: 1px solid var(--border); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .hc-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .hc-date { font-size: 10px; color: var(--fg-secondary); font-family: var(--font-mono); }
+    .hc-title { font-size: 14px; font-weight: 400; color: var(--fg-primary); font-style: italic; }
+    .hc-right { display: flex; gap: 12px; text-align: right; flex-shrink: 0; align-items: center; }
+    .hc-stat { display: flex; flex-direction: column; }
+    .hc-stat-val { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 500; }
+    .hc-stat-lbl { font-size: 9px; text-transform: uppercase; color: var(--fg-secondary); font-family: var(--font-mono); }
+
+    .btn-delete {
+      background: transparent; border: none; color: var(--fg-secondary);
+      cursor: pointer; padding: 6px; margin-left: 4px; border-radius: 6px;
+      transition: color 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-delete:hover { color: var(--coh-low); background: rgba(196,122,106,0.1); }
+
+    /* RF Finder */
+    #rf-progress-bar-bg { width: 100%; height: 4px; border-radius: 2px; background: var(--border); margin: 14px 0; overflow: hidden; }
+    #rf-progress-bar-fill { height: 100%; border-radius: 2px; background: var(--accent-main); width: 0%; transition: width 0.5s ease; }
+    #rf-step-display { display: flex; justify-content: space-around; margin-bottom: 14px; }
+    .rf-step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .rf-step-bpm { font-size: 12px; font-family: var(--font-mono); color: var(--fg-secondary); }
+    .rf-step-bar-bg { width: 32px; height: 48px; background: var(--border); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; }
+    .rf-step-bar-fill { width: 100%; background: var(--accent-main); border-radius: 4px; transition: height 0.4s ease; height: 0%; }
+    .rf-step-item.current .rf-step-bpm { color: var(--accent-main); font-weight: 500; }
+    .rf-step-item.winner .rf-step-bpm { color: var(--coh-high); font-weight: 500; }
+    .rf-step-item.winner .rf-step-bar-fill { background: var(--coh-high); }
+    #rf-status-text { font-size: 13px; color: var(--fg-secondary); text-align: center; min-height: 44px; line-height: 1.6; font-family: var(--font-mono); }
+    #rf-result-box { background: var(--bg-dark); border: 1px solid var(--coh-high); border-radius: 12px; padding: 16px; text-align: center; display: none; margin-bottom: 14px; }
+    #rf-result-val { font-size: 36px; font-weight: 300; font-family: var(--font-mono); color: var(--coh-high); letter-spacing: -1px; }
+    #rf-result-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); margin-top: 4px; font-family: var(--font-mono); }
+    #rf-saved-badge { display: none; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(126,196,160,0.08); border: 1px solid var(--coh-high); border-radius: 10px; margin-bottom: 14px; font-size: 11px; color: var(--coh-high); font-weight: 500; font-family: var(--font-mono); }
+    #rf-saved-badge.show { display: flex; }
   </style>
 </head>
 <body>
@@ -229,20 +323,20 @@
   </div>
 
   <div id="app-container">
-    <header>
+    <header id="main-header">
       <div class="brand">KW <span>Biofeedback</span></div>
       <div class="header-actions">
         <button class="btn-icon" id="btn-history" aria-label="History">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </button>
         <button class="btn-icon" id="btn-audio" aria-label="Toggle Audio Cues">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path id="audio-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07 M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
         </button>
         <button class="btn-icon" id="btn-settings" aria-label="Settings">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -265,29 +359,52 @@
     </div>
 
     <div id="main-stage">
+      <!-- RMSSD trend strip -->
+      <div id="trend-strip" class="no-data">
+        <span class="trend-label">7d avg</span>
+        <span class="trend-value" id="trend-value">--</span>
+        <span class="trend-label">ms RMSSD</span>
+        <span class="trend-delta" id="trend-delta"></span>
+      </div>
+
       <div id="pacer-container">
+        <div id="pacer-fill"></div>
         <div id="pacer-ring"></div>
         <div id="pacer-content">
           <div id="live-bpm" class="dim">--</div>
           <div id="pacer-instruction">Ready</div>
         </div>
-        
+
         <div id="camera-guide">
           <div class="video-circle">
             <video id="video-feed" autoplay playsinline muted></video>
           </div>
           <div class="guide-text">Cover the camera</div>
-          <div class="guide-subtext">Center your fingertip over the rear lens. Breathe from your belly, not your chest.</div>
+          <div class="guide-subtext">Fingertip over rear lens. Breathe from your belly, not your chest.</div>
         </div>
 
         <div id="baseline-overlay">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-          <div class="baseline-text">Breathe naturally.<br>Establishing baseline...</div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-main)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <div class="baseline-text">Breathe naturally.<br>Establishing baseline…</div>
         </div>
       </div>
+
+      <!-- Coherence arc -->
       <div id="coherence-wrapper">
         <div id="coherence-label">Coherence</div>
-        <div id="coherence-bar-bg"><div id="coherence-bar-fill"></div></div>
+        <div id="coherence-arc-wrapper">
+          <svg id="coherence-arc-svg" viewBox="0 0 200 56" preserveAspectRatio="xMidYMid meet">
+            <!-- Arc path: semicircle, r=88, center at 100,90, from ~200° to ~340° → left to right -->
+            <path id="coherence-arc-bg"
+              d="M 12,90 A 88,88 0 0 1 188,90"
+              fill="none" stroke-width="6" stroke="var(--border)" stroke-linecap="round"/>
+            <path id="coherence-arc-fill"
+              d="M 12,90 A 88,88 0 0 1 188,90"
+              fill="none" stroke-width="6" stroke="var(--coh-med)" stroke-linecap="round"
+              stroke-dasharray="276" stroke-dashoffset="138"/>
+          </svg>
+          <div id="coherence-pct-text">50%</div>
+        </div>
       </div>
     </div>
 
@@ -308,11 +425,11 @@
     <div id="controls">
       <div class="status-row">
         <span id="session-time">00:00</span>
-        <span class="status-tip" id="training-tip">Target: 20 min/day</span>
+        <span id="training-tip" style="font-size:10px;opacity:0.6;">Target: 20 min/day</span>
       </div>
       <button id="btn-main">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        Begin Training Session
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Begin Session
       </button>
     </div>
   </div>
@@ -320,17 +437,28 @@
   <!-- SETTINGS MODAL -->
   <div class="modal-backdrop" id="modal-settings">
     <div class="modal-card" id="modal-settings-card">
-      <div class="modal-header">Training Settings</div>
+      <div class="modal-header">Settings</div>
       <div id="rf-saved-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
         <span id="rf-badge-text">RF: 6.0 BPM saved</span>
       </div>
+
+      <!-- Focus Mode toggle -->
+      <div class="toggle-row">
+        <span class="toggle-label">Focus Mode (hide charts during session)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-focus">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
       <div class="setting-group">
         <div class="setting-label">
           <span>Breathing Protocol</span>
           <span class="setting-val" id="val-protocol">Resonant</span>
         </div>
-        <select id="select-protocol" style="width:100%; padding: 12px; background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; font-family: var(--font-sans); outline: none;">
+        <select id="select-protocol" style="width:100%; padding: 11px; background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-family: var(--font-mono); font-size: 13px; outline: none;">
           <option value="resonant">Resonant (Custom BPM)</option>
           <option value="box">Box Breathing (4-4-4-4)</option>
           <option value="relax">Relaxing (4-7-8)</option>
@@ -360,7 +488,7 @@
       <div id="rf-result-box">
         <div id="rf-result-val">6.0</div>
         <div id="rf-result-label">BPM — Your Resonant Frequency</div>
-        <div style="font-size:11px; color:var(--fg-secondary); margin-top:8px;">Largest IBI amplitude at this rate. Applied automatically.</div>
+        <div style="font-size:10px; color:var(--fg-secondary); margin-top:8px; font-family:var(--font-mono);">Largest IBI amplitude at this rate. Applied automatically.</div>
       </div>
       <button class="btn-block btn-primary" id="btn-rf-action">Start Assessment</button>
       <button class="btn-block btn-secondary" id="btn-rf-cancel">Cancel</button>
@@ -402,10 +530,10 @@
       <div style="background:var(--bg-dark); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:16px; display:flex; align-items:center; gap:16px;">
         <canvas id="summary-poincare" width="80" height="80" style="flex-shrink:0;"></canvas>
         <div>
-          <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--fg-secondary); font-weight:600; margin-bottom:6px;">Poincaré</div>
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--fg-secondary); font-weight:500; margin-bottom:6px; font-family:var(--font-mono);">Poincaré</div>
           <div style="font-size:13px; font-family:var(--font-mono); color:var(--fg-primary);">SD1 <span id="sum-sd1" style="color:var(--accent-inhale)">--</span> ms</div>
           <div style="font-size:13px; font-family:var(--font-mono); color:var(--fg-primary); margin-top:2px;">SD2 <span id="sum-sd2" style="color:var(--accent-exhale)">--</span> ms</div>
-          <div style="font-size:10px; color:var(--fg-secondary); margin-top:6px; line-height:1.4;">SD1 = short-term variability<br>SD2 = long-term variability</div>
+          <div style="font-size:10px; color:var(--fg-secondary); margin-top:6px; line-height:1.5; font-family:var(--font-mono);">SD1 = short-term variability<br>SD2 = long-term variability</div>
         </div>
       </div>
       <button class="btn-block btn-primary" id="btn-export-csv">Export Session Data (CSV)</button>
@@ -421,11 +549,11 @@
 
     const { WakeLockCtrl, BeatDetector } = window.ePATCore;
 
-    // ----------------------------------------------------------------
-    // UI REFS
-    // ----------------------------------------------------------------
+    // ── UI REFS ──
     const ui = {
+      mainHeader:      document.getElementById('main-header'),
       pacerRing:       document.getElementById('pacer-ring'),
+      pacerFill:       document.getElementById('pacer-fill'),
       pacerText:       document.getElementById('pacer-instruction'),
       liveBpm:         document.getElementById('live-bpm'),
       fingerDot:       document.getElementById('finger-dot'),
@@ -434,7 +562,8 @@
       btnMain:         document.getElementById('btn-main'),
       sessionTime:     document.getElementById('session-time'),
       trainingTip:     document.getElementById('training-tip'),
-      cohBar:          document.getElementById('coherence-bar-fill'),
+      cohArcFill:      document.getElementById('coherence-arc-fill'),
+      cohPctText:      document.getElementById('coherence-pct-text'),
       waveCanvas:      document.getElementById('wave-canvas'),
       beatFlash:       document.getElementById('beat-flash'),
       tachCanvas:      document.getElementById('tach-canvas'),
@@ -442,10 +571,15 @@
       pcSdReadout:     document.getElementById('pc-sd-readout'),
       baselineOverlay: document.getElementById('baseline-overlay'),
       cameraGuide:     document.getElementById('camera-guide'),
+      signalCard:      document.getElementById('signal-card'),
+      chartSection:    document.getElementById('chart-section'),
       tabTach:         document.getElementById('tab-tach'),
       tabPoincare:     document.getElementById('tab-poincare'),
       panelTach:       document.getElementById('panel-tach'),
       panelPoincare:   document.getElementById('panel-poincare'),
+      trendStrip:      document.getElementById('trend-strip'),
+      trendValue:      document.getElementById('trend-value'),
+      trendDelta:      document.getElementById('trend-delta'),
       btnHistory:      document.getElementById('btn-history'),
       modalHistory:    document.getElementById('modal-history'),
       btnCloseHistory: document.getElementById('btn-close-history'),
@@ -483,11 +617,10 @@
       sumSd1:          document.getElementById('sum-sd1'),
       sumSd2:          document.getElementById('sum-sd2'),
       summaryPoincare: document.getElementById('summary-poincare'),
+      toggleFocus:     document.getElementById('toggle-focus'),
     };
 
-    // ----------------------------------------------------------------
-    // PROTOCOLS
-    // ----------------------------------------------------------------
+    // ── PROTOCOLS ──
     const PROTOCOLS = {
       resonant:  { name: "Resonant",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
       box:       { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
@@ -495,14 +628,11 @@
       coherence: { name: "Coherence",     bpm: 5.5,  phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
     };
 
-    // RF steps: Lehrer et al. protocol, 6.5→4.5 in 0.5 BPM steps
     const RF_STEPS = [6.5, 6.0, 5.5, 5.0, 4.5];
-    const RF_STEP_DURATION_MS = 120000; // 2 min per step
-    const RF_WARMUP_MS = 30000; // discard first 30s of each step
+    const RF_STEP_DURATION_MS = 120000;
+    const RF_WARMUP_MS = 30000;
 
-    // ----------------------------------------------------------------
-    // STATE
-    // ----------------------------------------------------------------
+    // ── STATE ──
     let isSessionActive = false;
     let isBaselineMode  = false;
     let calibrationTimeout = null;
@@ -514,15 +644,19 @@
     let tachDirty       = false;
     let poincareDirty   = false;
     let sessionStartTime = 0;
+    let focusMode       = localStorage.getItem('kw_focus') === 'true';
     const BASELINE_DUR_MS = 120000;
 
-    let ibiHistory       = [];
+    let ibiHistory         = [];
     let currentSessionIbis = [];
     let currentPacerPhase  = 'hold';
     let coherenceScore     = 50;
     let totalCoherentBeats = 0;
     let totalValidBeats    = 0;
     let baselineBpm        = 0;
+
+    // Coherence arc geometry — total arc length of the semicircle path
+    const ARC_LENGTH = 276;
 
     const WAVE_MAX = 120;
     let waveBuffer = [];
@@ -543,9 +677,25 @@
     let oscillator = null;
     let gainNode   = null;
 
-    // ----------------------------------------------------------------
-    // CANVAS
-    // ----------------------------------------------------------------
+    // ── FOCUS MODE ──
+    function applyFocusMode(entering) {
+      if (entering && focusMode) {
+        ui.mainHeader.classList.add('hidden');
+        ui.chartSection.classList.add('hidden');
+      } else {
+        ui.mainHeader.classList.remove('hidden');
+        ui.chartSection.classList.remove('hidden');
+      }
+    }
+
+    ui.toggleFocus.checked = focusMode;
+    ui.toggleFocus.addEventListener('change', e => {
+      focusMode = e.target.checked;
+      localStorage.setItem('kw_focus', focusMode);
+      if (isSessionActive) applyFocusMode(true);
+    });
+
+    // ── CANVAS ──
     const waveCtx = ui.waveCanvas.getContext('2d');
     const tachCtx = ui.tachCanvas.getContext('2d');
     const pcCtx   = ui.poincareCanvas.getContext('2d');
@@ -562,9 +712,7 @@
     window.addEventListener('resize', resizeCanvases);
     requestAnimationFrame(() => requestAnimationFrame(resizeCanvases));
 
-    // ----------------------------------------------------------------
-    // TABS
-    // ----------------------------------------------------------------
+    // ── TABS ──
     ui.tabTach.addEventListener('click', () => {
       activeChartTab = 'tach';
       ui.tabTach.classList.add('active'); ui.tabPoincare.classList.remove('active');
@@ -577,9 +725,52 @@
       poincareDirty = true;
     });
 
-    // ----------------------------------------------------------------
-    // HISTORY & STORAGE
-    // ----------------------------------------------------------------
+    // ── TREND STRIP ──
+    function updateTrendStrip() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const recent = history.filter(s => {
+        const age = Date.now() - new Date(s.date).getTime();
+        return age < 7 * 24 * 60 * 60 * 1000 && s.rmssd > 0;
+      });
+      if (recent.length < 2) { ui.trendStrip.classList.add('no-data'); return; }
+
+      const avg = Math.round(recent.reduce((s, d) => s + d.rmssd, 0) / recent.length);
+      ui.trendValue.textContent = avg;
+      ui.trendStrip.classList.remove('no-data');
+
+      // Compare to previous 7-day window
+      const older = history.filter(s => {
+        const age = Date.now() - new Date(s.date).getTime();
+        return age >= 7 * 24 * 60 * 60 * 1000 && age < 14 * 24 * 60 * 60 * 1000 && s.rmssd > 0;
+      });
+      if (older.length >= 2) {
+        const oldAvg = Math.round(older.reduce((s, d) => s + d.rmssd, 0) / older.length);
+        const delta = avg - oldAvg;
+        if (Math.abs(delta) < 3) {
+          ui.trendDelta.textContent = '→'; ui.trendDelta.className = 'trend-delta flat';
+        } else if (delta > 0) {
+          ui.trendDelta.textContent = `↑${delta}`; ui.trendDelta.className = 'trend-delta up';
+        } else {
+          ui.trendDelta.textContent = `↓${Math.abs(delta)}`; ui.trendDelta.className = 'trend-delta down';
+        }
+      } else {
+        ui.trendDelta.textContent = '';
+      }
+    }
+
+    // ── COHERENCE ARC ──
+    function updateCoherenceArc(score) {
+      // score 0-100 → dashoffset from ARC_LENGTH (empty) to 0 (full)
+      const offset = ARC_LENGTH - (score / 100) * ARC_LENGTH;
+      ui.cohArcFill.style.strokeDashoffset = offset;
+      ui.cohPctText.textContent = `${Math.round(score)}%`;
+      // Color: low=coh-low, mid=coh-med, high=coh-high
+      const color = score >= 70 ? 'var(--coh-high)' : score >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
+      ui.cohArcFill.style.stroke = color;
+      ui.cohPctText.style.color = color;
+    }
+
+    // ── HISTORY ──
     function saveSessionToHistory(rmssd, sdnn, coherencePct, endBpm, sd1, sd2) {
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
       const durationSec = Math.floor((performance.now() - sessionStartTime) / 1000);
@@ -593,38 +784,38 @@
       });
       localStorage.setItem('kw_history', JSON.stringify(history));
       renderHistory();
+      updateTrendStrip();
     }
 
     function renderHistory() {
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
       if (!history.length) {
-        ui.historyList.innerHTML = '<div style="text-align:center;color:var(--fg-secondary);padding:32px 0;">No sessions yet.</div>';
+        ui.historyList.innerHTML = '<div style="text-align:center;color:var(--fg-secondary);padding:32px 0;font-family:var(--font-mono);font-size:12px;">No sessions yet.</div>';
         return;
       }
       ui.historyList.innerHTML = history.map(s => {
         const isBaseline = s.protocol === 'Baseline';
         return `<div class="history-card">
           <div class="hc-left">
-            <div class="hc-date">${new Date(s.date).toLocaleDateString()} &middot; ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
+            <div class="hc-date">${new Date(s.date).toLocaleDateString()} · ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
             <div class="hc-title">${s.protocol}</div>
           </div>
-          <div class="hc-right" style="align-items: center;">
+          <div class="hc-right">
             <div class="hc-stat"><span class="hc-stat-val">${s.rmssd}</span><span class="hc-stat-lbl">RMSSD</span></div>
             <div class="hc-stat"><span class="hc-stat-val">${s.sdnn||'--'}</span><span class="hc-stat-lbl">SDNN</span></div>
             ${!isBaseline ? `<div class="hc-stat"><span class="hc-stat-val">${s.coherence}%</span><span class="hc-stat-lbl">Coh</span></div>` : ''}
-            <button class="btn-delete" data-id="${s.id}" aria-label="Delete Session">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <button class="btn-delete" data-id="${s.id}" aria-label="Delete">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
         </div>`;
       }).join('');
 
-      // RMSSD trend sparkline — last 10 sessions, oldest→newest
       const sparkData = history.slice(0, 10).reverse().map(s => s.rmssd).filter(Boolean);
       if (sparkData.length >= 3) {
         ui.historyList.insertAdjacentHTML('beforeend', `
           <div style="background:var(--bg-dark);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-top:4px;">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--fg-secondary);font-weight:600;margin-bottom:8px;">RMSSD Trend (last ${sparkData.length} sessions)</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--fg-secondary);font-weight:500;margin-bottom:8px;font-family:var(--font-mono);">RMSSD Trend (last ${sparkData.length} sessions)</div>
             ${buildSparkline(sparkData)}
           </div>`);
       }
@@ -672,9 +863,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
-    // ----------------------------------------------------------------
-    // AUDIO
-    // ----------------------------------------------------------------
+    // ── AUDIO ──
     function toggleAudio() {
       audioEnabled = !audioEnabled;
       ui.btnAudio.classList.toggle('active', audioEnabled);
@@ -699,9 +888,7 @@
       if (oscillator) { setTimeout(() => { if (oscillator) { oscillator.stop(); oscillator.disconnect(); oscillator = null; } }, 200); }
     }
 
-    // ----------------------------------------------------------------
-    // PACER LOOP
-    // ----------------------------------------------------------------
+    // ── PACER LOOP ──
     function animatePacer() {
       if (!isSessionActive) return;
       const now = performance.now();
@@ -713,14 +900,11 @@
         const s = Math.floor(rem / 1000);
         ui.sessionTime.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
       } else if (isRfMode) {
-        // Check if current step window has elapsed
         const stepElapsed = elapsedMs - rfStepIndex * RF_STEP_DURATION_MS;
         const rem = RF_STEP_DURATION_MS - stepElapsed;
         const s = Math.max(0, Math.floor(rem / 1000));
         ui.sessionTime.textContent = `Step ${rfStepIndex+1}/${RF_STEPS.length} — ${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
-        // Advance step when time's up
         if (rem <= 0 && rfRunning) { rfRunning = false; advanceRfStep(); }
-        // Update progress bar
         const totalDone = rfStepIndex * RF_STEP_DURATION_MS + Math.min(stepElapsed, RF_STEP_DURATION_MS);
         ui.rfProgressFill.style.width = `${Math.min(100, (totalDone / (RF_STEPS.length * RF_STEP_DURATION_MS)) * 100)}%`;
       } else {
@@ -731,40 +915,48 @@
 
       if (!isBaselineMode) {
         const pDef = PROTOCOLS[activeProtocol];
-        // RF mode uses current step BPM, ignoring protocol
         const currentBpm = isRfMode ? RF_STEPS[rfStepIndex] : (pDef.customBpm ? targetBpm : pDef.bpm);
         const cycleMs = (60 / currentBpm) * 1000;
         const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
-        // In RF mode, use simple 50/50 inhale/exhale (no holds — cleaner RSA signal)
         const [pIn, pHIn, pOut] = isRfMode ? [0.5, 0.0, 0.5] : pDef.phases;
-        let scale = 1, color = 'var(--border)', shadow = '', text = '';
+        let scale = 1, color = 'var(--border)', shadow = '', fillColor = 'rgba(126,184,212,0.04)', text = '';
 
         if (phaseProgress < pIn) {
-  const p = phaseProgress / pIn;
-  const ease = Math.sin(p * Math.PI / 2);  // sine ease-in
-  scale = 1 + ease * 0.4;
-  color = 'var(--accent-inhale)';
-  shadow = `0 0 30px rgba(96,165,250,${0.2 + ease * 0.3})`;
-  text = 'Inhale';
-  currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
+          const p = phaseProgress / pIn;
+          const ease = Math.sin(p * Math.PI / 2);
+          scale = 1 + ease * 0.4;
+          color = 'var(--accent-inhale)';
+          shadow = `0 0 28px rgba(126,184,212,${0.15 + ease * 0.25})`;
+          fillColor = `rgba(126,184,212,${0.04 + ease * 0.08})`;
+          text = 'Inhale';
+          currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
         } else if (phaseProgress < pIn + pHIn) {
-          scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(96,165,250,0.5)'; text = 'Hold';
+          scale = 1.4; color = 'var(--accent-inhale)';
+          shadow = '0 0 28px rgba(126,184,212,0.4)';
+          fillColor = 'rgba(126,184,212,0.12)';
+          text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
         } else if (phaseProgress < pIn + pHIn + pOut) {
-  const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
-  const ease = 1 - Math.sin((1 - p) * Math.PI / 2);  // sine ease-out, mirrors inhale
-  scale = 1.4 - ease * 0.4;
-  color = 'var(--accent-exhale)';
-  shadow = `0 0 15px rgba(167,139,250,${0.5 - ease * 0.3})`;
-  text = 'Exhale';
-  currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
+          const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
+          const ease = 1 - Math.sin((1 - p) * Math.PI / 2);
+          scale = 1.4 - ease * 0.4;
+          color = 'var(--accent-exhale)';
+          shadow = `0 0 16px rgba(196,168,130,${0.4 - ease * 0.25})`;
+          fillColor = `rgba(196,168,130,${0.10 - ease * 0.06})`;
+          text = 'Exhale';
+          currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
         } else {
-          scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(167,139,250,0.2)'; text = 'Hold';
+          scale = 1; color = 'var(--border)'; shadow = '';
+          fillColor = 'rgba(126,184,212,0.02)';
+          text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
         }
+
         ui.pacerRing.style.transform = `scale(${scale})`;
+        ui.pacerFill.style.transform = `scale(${scale})`;
         ui.pacerRing.style.borderColor = color;
         ui.pacerRing.style.boxShadow = shadow;
+        ui.pacerFill.style.background = `radial-gradient(circle, ${fillColor} 0%, transparent 70%)`;
         if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
       }
 
@@ -773,9 +965,7 @@
       pacerRaf = requestAnimationFrame(animatePacer);
     }
 
-    // ----------------------------------------------------------------
-    // HRV MATH
-    // ----------------------------------------------------------------
+    // ── HRV MATH ──
     function computeRMSSD(ibis) {
       let sumSq = 0, n = 0;
       for (let i = 1; i < ibis.length; i++) {
@@ -784,16 +974,11 @@
       }
       return n > 0 ? Math.sqrt(sumSq / n) : 0;
     }
-
     function computeSDNN(ibis) {
       if (ibis.length < 2) return 0;
       const mean = ibis.reduce((a,b) => a+b, 0) / ibis.length;
       return Math.sqrt(ibis.reduce((s,v) => s + Math.pow(v-mean, 2), 0) / ibis.length);
     }
-
-    // Poincaré SD1 / SD2
-    // SD1 = std of (RRn+1 - RRn) / sqrt(2)  ≈ RMSSD / sqrt(2)  — short-term beat-to-beat variability
-    // SD2 = std of (RRn+1 + RRn) / sqrt(2)                      — long-term variability
     function computePoincare(ibis) {
       if (ibis.length < 3) return { sd1: 0, sd2: 0 };
       const x = ibis.slice(0,-1).map((v,i) => (ibis[i+1]-v) / Math.SQRT2);
@@ -804,17 +989,13 @@
       const varY  = y.reduce((s,v) => s + Math.pow(v-meanY,2), 0) / y.length;
       return { sd1: Math.sqrt(Math.max(0,varX)), sd2: Math.sqrt(Math.max(0,varY)) };
     }
-
-    // IBI amplitude: 90th–10th percentile — robust against single outliers
     function ibiAmplitude(ibis) {
       if (ibis.length < 4) return 0;
       const s = [...ibis].sort((a,b) => a-b);
       return s[Math.floor(s.length*0.9)] - s[Math.floor(s.length*0.1)];
     }
 
-    // ----------------------------------------------------------------
-    // COHERENCE
-    // ----------------------------------------------------------------
+    // ── COHERENCE ──
     function evaluateCoherence(ibiMs) {
       if (ibiHistory.length < 2 || isBaselineMode || isRfMode) return;
       const prev = ibiHistory[ibiHistory.length-2].ibi;
@@ -827,13 +1008,10 @@
       totalValidBeats++;
       if (coherent) totalCoherentBeats++;
       coherenceScore = coherenceScore*0.8 + (coherent ? 100 : 0)*0.2;
-      ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
-      ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
+      updateCoherenceArc(coherenceScore);
     }
 
-    // ----------------------------------------------------------------
-    // DRAWING
-    // ----------------------------------------------------------------
+    // ── DRAWING ──
     function drawWave() {
       const W = ui.waveCanvas.width/(window.devicePixelRatio||1), H = ui.waveCanvas.height/(window.devicePixelRatio||1);
       waveCtx.clearRect(0,0,W,H);
@@ -841,7 +1019,7 @@
       let mn = waveBuffer[0], mx = waveBuffer[0];
       for (const v of waveBuffer) { if(v<mn)mn=v; if(v>mx)mx=v; }
       const range = mx-mn||0.001, pad=4, xStep=W/WAVE_MAX, xOff=(WAVE_MAX-waveBuffer.length)*xStep;
-      waveCtx.beginPath(); waveCtx.strokeStyle='#3b82f6'; waveCtx.lineWidth=2; waveCtx.lineJoin='round';
+      waveCtx.beginPath(); waveCtx.strokeStyle='var(--accent-main)'; waveCtx.lineWidth=1.5; waveCtx.lineJoin='round';
       for (let i=0;i<waveBuffer.length;i++) {
         const x=xOff+i*xStep, y=pad+((mx-waveBuffer[i])/range)*(H-pad*2);
         i===0 ? waveCtx.moveTo(x,y) : waveCtx.lineTo(x,y);
@@ -853,40 +1031,23 @@
       const W=ui.tachCanvas.width/(window.devicePixelRatio||1);
       const H=ui.tachCanvas.height/(window.devicePixelRatio||1);
       tachCtx.clearRect(0,0,W,H);
-      
       const vis = ibiHistory.filter(d=>(now-d.time)<TACH_WINDOW_MS);
       if (vis.length < 2) return;
-      
       const ibis=vis.map(d=>d.ibi);
       const mean = ibis.reduce((a,b)=>a+b,0)/ibis.length;
-      
-      // Calculate max deviation to force the mean strictly to the vertical center
       let maxDev = 0;
-      for (const v of ibis) {
-        const dev = Math.abs(v - mean);
-        if (dev > maxDev) maxDev = dev;
-      }
-      
-      // Ensure a minimum vertical scale (+/- 50ms) and add 20% visual padding
-      const yRange = Math.max(50, maxDev * 1.2); 
+      for (const v of ibis) { const dev = Math.abs(v - mean); if (dev > maxDev) maxDev = dev; }
+      const yRange = Math.max(50, maxDev * 1.2);
       const yMin = mean - yRange;
-      
-      const plotPadY = 16; 
-      const drawH = H - (plotPadY * 2);
-      
-      // Baseline is now mathematically locked to the exact center of the drawing area
+      const plotPadY = 16, drawH = H - (plotPadY * 2);
       const mY = plotPadY + (drawH / 2);
-      
-      tachCtx.beginPath(); tachCtx.strokeStyle='rgba(161,161,170,0.2)'; tachCtx.setLineDash([4,4]);
+      tachCtx.beginPath(); tachCtx.strokeStyle='rgba(154,143,132,0.15)'; tachCtx.setLineDash([3,4]);
       tachCtx.moveTo(0,mY); tachCtx.lineTo(W,mY); tachCtx.stroke(); tachCtx.setLineDash([]);
-      
-      tachCtx.beginPath(); tachCtx.strokeStyle='#60a5fa'; tachCtx.lineWidth=2.5; tachCtx.lineJoin='round';
+      tachCtx.beginPath(); tachCtx.strokeStyle='var(--accent-inhale)'; tachCtx.lineWidth=2; tachCtx.lineJoin='round';
       vis.forEach((pt,i) => {
         const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
         const y = plotPadY + drawH - ((pt.ibi-yMin)/(yRange*2)) * drawH;
-        
         if (i===0) { tachCtx.moveTo(x,y); return; }
-        
         const prev=vis[i-1], pAge=now-prev.time;
         const px=W-(pAge/TACH_WINDOW_MS)*W;
         const py = plotPadY + drawH - ((prev.ibi-yMin)/(yRange*2)) * drawH;
@@ -894,11 +1055,10 @@
         tachCtx.bezierCurveTo(cx,py,cx,y,x,y);
       });
       tachCtx.stroke();
-      
       vis.forEach(pt => {
         const age=now-pt.time, x=W-(age/TACH_WINDOW_MS)*W;
         const y = plotPadY + drawH - ((pt.ibi-yMin)/(yRange*2)) * drawH;
-        tachCtx.beginPath(); tachCtx.fillStyle='#fff'; tachCtx.arc(x,y,3,0,Math.PI*2); tachCtx.fill();
+        tachCtx.beginPath(); tachCtx.fillStyle='var(--fg-primary)'; tachCtx.arc(x,y,2.5,0,Math.PI*2); tachCtx.fill();
       });
     }
 
@@ -915,14 +1075,12 @@
       const minV=Math.min(...all)-20, maxV=Math.max(...all)+20;
       const toX=v=>pad+((v-minV)/(maxV-minV))*(W-pad*2);
       const toY=v=>H-pad-((v-minV)/(maxV-minV))*(H-pad*2);
-      // Identity line
-      ctx.beginPath(); ctx.strokeStyle='rgba(161,161,170,0.2)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.strokeStyle='rgba(154,143,132,0.15)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
       ctx.moveTo(toX(minV),toY(minV)); ctx.lineTo(toX(maxV),toY(maxV)); ctx.stroke(); ctx.setLineDash([]);
-      // Points — recency gradient
       const n=ibis.length-1;
       for (let i=0;i<n;i++) {
         const alpha = targetCanvas ? 0.7 : 0.15+(i/n)*0.75;
-        ctx.beginPath(); ctx.fillStyle=`rgba(96,165,250,${alpha.toFixed(2)})`;
+        ctx.beginPath(); ctx.fillStyle=`rgba(126,184,212,${alpha.toFixed(2)})`;
         ctx.arc(toX(ibis[i]), toY(ibis[i+1]), targetCanvas?2.5:3, 0, Math.PI*2);
         ctx.fill();
       }
@@ -932,45 +1090,36 @@
       }
     }
 
-    // ----------------------------------------------------------------
-    // EPAT CALLBACKS
-    // ----------------------------------------------------------------
+    // ── EPAT CALLBACKS ──
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
       const guideText = ui.cameraGuide.querySelector('.guide-text');
       const guideSubtext = ui.cameraGuide.querySelector('.guide-subtext');
-
-      if (!present) { 
-        // Finger removed: reset and show guide immediately
+      if (!present) {
         clearTimeout(calibrationTimeout);
         isCalibrating = false;
         ui.fingerText.textContent = 'Adjust Finger';
-        ui.liveBpm.classList.add('dim'); 
-        ui.liveBpm.textContent = '--'; 
-        waveBuffer = []; 
-        drawWave(); 
-        
+        ui.liveBpm.classList.add('dim');
+        ui.liveBpm.textContent = '--';
+        waveBuffer = []; drawWave();
         if (isSessionActive) {
-          ui.cameraGuide.classList.add('active'); 
+          ui.cameraGuide.classList.add('active');
           if (guideText) guideText.textContent = 'Cover the camera';
-          if (guideSubtext) guideSubtext.textContent = 'Center your fingertip over the rear lens.';
+          if (guideSubtext) guideSubtext.textContent = 'Fingertip over rear lens. Breathe from your belly, not your chest.';
         }
-      } else { 
-        // Finger detected: Start 3-second calibration phase
-        ui.fingerText.textContent = 'Calibrating...';
+      } else {
+        ui.fingerText.textContent = 'Calibrating…';
         isCalibrating = true;
-        
         if (guideText) guideText.textContent = 'Hold still';
         if (guideSubtext) guideSubtext.innerHTML = 'Illuminating capillaries…<br>Belly breathing, not chest.';
-        
         calibrationTimeout = setTimeout(() => {
           if (isCalibrating && isSessionActive) {
             ui.fingerText.textContent = 'Signal Good';
             ui.liveBpm.classList.remove('dim');
-            ui.cameraGuide.classList.remove('active'); // Fade out video
+            ui.cameraGuide.classList.remove('active');
             isCalibrating = false;
           }
-        }, 3000); // 3-second visual calibration delay
+        }, 3000);
       }
     }
 
@@ -994,29 +1143,28 @@
     }
 
     function handlePPGSample(s) { waveBuffer.push(s); if(waveBuffer.length>WAVE_MAX)waveBuffer.shift(); requestAnimationFrame(drawWave); }
-    function handleSQI(sqi) { ui.sqiText.textContent=`SQI: ${(sqi*100).toFixed(1)}%`; ui.sqiText.style.color=sqi>0.01?'var(--coh-high)':'var(--coh-med)'; }
+    function handleSQI(sqi) {
+      ui.sqiText.textContent=`SQI: ${(sqi*100).toFixed(1)}%`;
+      ui.sqiText.style.color=sqi>0.01?'var(--coh-high)':'var(--coh-med)';
+    }
 
-    // ----------------------------------------------------------------
-    // SESSION MANAGEMENT
-    // ----------------------------------------------------------------
+    // ── SESSION ──
     async function startSession(baselineTrigger=false, rfTrigger=false) {
-      // NEW: Safety release. If a session is active, stop it and release the camera hardware first.
       if (isSessionActive) await stopSession(false);
-
       isBaselineMode=baselineTrigger; isRfMode=rfTrigger;
       ibiHistory=[]; waveBuffer=[]; currentSessionIbis=[];
       coherenceScore=50; totalCoherentBeats=0; totalValidBeats=0; baselineBpm=0;
       tachDirty=false; poincareDirty=false;
-      ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
+      updateCoherenceArc(50);
       ui.trainingTip.textContent = isRfMode ? 'RF Assessment' : 'Target: 20 min/day';
-      ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
+      ui.btnMain.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
-      
       if (isBaselineMode) { ui.baselineOverlay.classList.add('active'); ui.modalSettings.classList.remove('show'); }
       else { ui.cameraGuide.classList.add('active'); }
-      
+      applyFocusMode(true);
+      // Also hide trend strip during session
+      ui.trendStrip.classList.add('hidden');
       await WakeLockCtrl.request();
-      
       try {
         await BeatDetector.start({
           video: document.getElementById('video-feed'), canvas: document.getElementById('sampling-canvas'),
@@ -1025,20 +1173,20 @@
         isSessionActive=true; sessionStartTime=performance.now();
         pacerRaf=requestAnimationFrame(animatePacer);
       } catch(err) {
-        console.error(err); 
-        alert("Camera and Torch required. Please allow permissions."); 
+        console.error(err);
+        alert("Camera and Torch required. Please allow permissions.");
         stopSession(false);
-        // NEW: Re-throw the error so the RF Assessment modal knows to halt
-        throw err; 
+        throw err;
       }
     }
 
     async function stopSession(showSummary=true) {
       isSessionActive=false; cancelAnimationFrame(pacerRaf); stopAudioTone();
       await BeatDetector.stop(); WakeLockCtrl.release();
-      ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training Session`;
+      ui.btnMain.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Session`;
       ui.btnMain.classList.remove('active');
-      ui.pacerRing.style.transform='scale(1)'; ui.pacerRing.style.borderColor='var(--border)'; ui.pacerRing.style.boxShadow='none';
+      ui.pacerRing.style.transform='scale(1)'; ui.pacerFill.style.transform='scale(1)';
+      ui.pacerRing.style.borderColor='var(--border)'; ui.pacerRing.style.boxShadow='none';
       ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--fg-secondary)';
       ui.baselineOverlay.classList.remove('active');
       ui.cameraGuide.classList.remove('active');
@@ -1046,6 +1194,8 @@
       ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--fg-secondary)';
       ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
       isRfMode=false; rfRunning=false;
+      applyFocusMode(false);
+      ui.trendStrip.classList.remove('hidden');
       if (showSummary && ibiHistory.length>5) generateSummary();
     }
 
@@ -1068,9 +1218,7 @@
       ui.modalSummary.classList.add('show');
     }
 
-    // ----------------------------------------------------------------
-    // RF FINDER
-    // ----------------------------------------------------------------
+    // ── RF FINDER ──
     function buildRfStepDisplay() {
       ui.rfStepDisplay.innerHTML = RF_STEPS.map((bpm,i) => `
         <div class="rf-step-item" id="rf-step-${i}">
@@ -1092,7 +1240,6 @@
     }
 
     function advanceRfStep() {
-      // Snapshot amplitude for the step that just ended
       const amp = ibiAmplitude(rfStepIbis);
       rfAmplitudes.push(amp);
       rfStepIbis = [];
@@ -1102,10 +1249,10 @@
         finishRfAssessment();
       } else {
         rfRunning = true;
-ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling…`;
-setTimeout(() => {
-  if (rfRunning) ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — measuring`;
-}, RF_WARMUP_MS);
+        ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling…`;
+        setTimeout(() => {
+          if (rfRunning) ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — measuring`;
+        }, RF_WARMUP_MS);
       }
     }
 
@@ -1117,15 +1264,10 @@ setTimeout(() => {
       const barEl  = document.getElementById(`rf-bar-${winnerIdx}`);
       if (stepEl) stepEl.classList.add('winner');
       if (barEl)  barEl.style.background='var(--coh-high)';
-      
-      // Save & apply
       savedRf=winnerBpm; localStorage.setItem('kw_rf', winnerBpm.toString());
       targetBpm=winnerBpm; ui.sliderBpm.value=winnerBpm; ui.valBpm.textContent=`${winnerBpm.toFixed(1)} breaths/min`;
       updateRfSavedBadge();
-      
-      // NEW: Bring the modal back onto the screen!
       ui.modalRf.classList.add('show');
-      
       ui.rfResultVal.textContent=winnerBpm.toFixed(1);
       ui.rfResultBox.style.display='block';
       ui.rfStatusText.textContent='Assessment complete. This rate produced the largest heart rate oscillations for you.';
@@ -1144,26 +1286,20 @@ setTimeout(() => {
     }
 
     async function startRfAssessment() {
-      if (rfRunning) return; 
-      rfRunning = true; 
-      
-      ui.btnRfAction.disabled = true; 
+      if (rfRunning) return;
+      rfRunning = true;
+      ui.btnRfAction.disabled = true;
       ui.btnRfAction.style.opacity = '0.5';
-
       rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[];
       ui.rfStatusText.textContent='Starting camera…';
-      
       try {
         await startSession(false, true);
         ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling (30s)…`;
         updateRfStepDisplay();
-        
-        // NEW: Hide the modal to reveal the breathing pacer!
         ui.modalRf.classList.remove('show');
-        
-      } catch(e) { 
-        ui.rfStatusText.textContent='Camera error. Please allow permissions.'; 
-        rfRunning = false; 
+      } catch(e) {
+        ui.rfStatusText.textContent='Camera error. Please allow permissions.';
+        rfRunning = false;
       } finally {
         ui.btnRfAction.disabled = false;
         ui.btnRfAction.style.opacity = '1';
@@ -1175,17 +1311,13 @@ setTimeout(() => {
       else ui.rfSavedBadge.classList.remove('show');
     }
 
-    // ----------------------------------------------------------------
-    // MODAL HELPERS
-    // ----------------------------------------------------------------
+    // ── MODALS ──
     function setupModal(backdrop, card, closeFn) {
       backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeFn(); });
       if (card) card.addEventListener('click', e=>e.stopPropagation());
     }
 
-    // ----------------------------------------------------------------
-    // EVENT LISTENERS
-    // ----------------------------------------------------------------
+    // ── EVENT LISTENERS ──
     ui.btnMain.addEventListener('click', ()=>{ if(isSessionActive) stopSession(true); else startSession(false); });
     ui.btnAudio.addEventListener('click', toggleAudio);
 
@@ -1210,30 +1342,26 @@ setTimeout(() => {
     ui.selectProtocol.addEventListener('change', e=>{ activeProtocol=e.target.value; const p=PROTOCOLS[activeProtocol]; ui.valProtocol.textContent=p.name; ui.groupBpm.style.display=p.customBpm?'block':'none'; });
     ui.sliderBpm.addEventListener('input', e=>{ targetBpm=parseFloat(e.target.value); ui.valBpm.textContent=`${targetBpm.toFixed(1)} breaths/min`; });
 
-    // History Delete Listener
     ui.historyList.addEventListener('click', e => {
       const btn = e.target.closest('.btn-delete');
-      if (!btn) return; // Ignore clicks that aren't on the delete button
-      
+      if (!btn) return;
       const sessionId = parseInt(btn.dataset.id, 10);
-      if (confirm('Are you sure you want to delete this session?')) {
+      if (confirm('Delete this session?')) {
         let history = JSON.parse(localStorage.getItem('kw_history') || '[]');
-        // Filter out the one matching ID
         history = history.filter(s => s.id !== sessionId);
-        // Save the clean array back to storage
         localStorage.setItem('kw_history', JSON.stringify(history));
-        // Re-render the UI instantly
         renderHistory();
+        updateTrendStrip();
       }
     });
 
-    // ----------------------------------------------------------------
-    // INIT
-    // ----------------------------------------------------------------
+    // ── INIT ──
     ui.audioWaves.style.display='none';
     if (savedRf>0) { targetBpm=savedRf; ui.sliderBpm.value=savedRf; ui.valBpm.textContent=`${savedRf.toFixed(1)} breaths/min`; }
     updateRfSavedBadge();
     renderHistory();
+    updateTrendStrip();
+    updateCoherenceArc(50);
   </script>
 </body>
 </html>
