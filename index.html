@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>KW Biofeedback</title>
   <meta name="theme-color" content="#0a0a0c">
+  <link rel="manifest" href="manifest.json">
   <style>
     /* ============================================================
        DESIGN TOKENS & BASE STYLES
@@ -190,6 +191,21 @@
     .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600;}
     .stat-highlight { color: var(--coh-high); }
 
+    /* History & Baseline Styles */
+    .history-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .history-card { background: var(--bg-dark); border: 1px solid var(--border); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;}
+    .hc-left { display: flex; flex-direction: column; gap: 4px; }
+    .hc-date { font-size: 11px; color: var(--fg-secondary); }
+    .hc-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
+    .hc-right { display: flex; gap: 12px; text-align: right; }
+    .hc-stat { display: flex; flex-direction: column; }
+    .hc-stat-val { font-size: 14px; font-family: var(--font-mono); color: var(--fg-primary); font-weight: 600;}
+    .hc-stat-lbl { font-size: 9px; text-transform: uppercase; color: var(--fg-secondary); }
+    
+    #baseline-overlay { position: absolute; inset: 0; background: var(--bg-card); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; border-radius: 50%;}
+    #baseline-overlay.active { opacity: 1; pointer-events: auto; }
+    .baseline-text { font-size: 14px; color: var(--fg-secondary); text-align: center; margin-top: 16px; font-weight: 600;}
+
   </style>
 </head>
 <body>
@@ -205,6 +221,12 @@
     <header>
       <div class="brand">KW <span>Biofeedback</span></div>
       <div class="header-actions">
+        <!-- History Button -->
+        <button class="btn-icon" id="btn-history" aria-label="History">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </button>
         <!-- Audio Toggle Button -->
         <button class="btn-icon" id="btn-audio" aria-label="Toggle Audio Cues">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -245,6 +267,11 @@
           <div id="live-bpm" class="dim">--</div>
           <div id="pacer-instruction">Ready</div>
         </div>
+        <!-- Baseline Overlay -->
+        <div id="baseline-overlay">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <div class="baseline-text">Breathe naturally.<br>Establishing baseline...</div>
+        </div>
       </div>
       
       <div id="coherence-wrapper">
@@ -278,22 +305,42 @@
   <div class="modal-backdrop" id="modal-settings">
     <div class="modal-card">
       <div class="modal-header">Training Settings</div>
+      
       <div class="setting-group">
+        <div class="setting-label">
+          <span>Breathing Protocol</span>
+          <span class="setting-val" id="val-protocol">Resonant</span>
+        </div>
+        <select id="select-protocol" style="width:100%; padding: 12px; background: var(--bg-dark); color: var(--fg-primary); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; font-family: var(--font-sans); outline: none;">
+          <option value="resonant">Resonant (Custom BPM)</option>
+          <option value="box">Box Breathing (4-4-4-4)</option>
+          <option value="relax">Relaxing (4-7-8)</option>
+          <option value="coherence">Coherence (5.5 BPM)</option>
+        </select>
+      </div>
+
+      <div class="setting-group" id="group-bpm">
         <div class="setting-label">
           <span>Resonant Frequency</span>
           <span class="setting-val" id="val-bpm">6.0 breaths/min</span>
         </div>
         <input type="range" id="slider-bpm" min="4.0" max="8.0" step="0.1" value="6.0">
       </div>
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Inhale / Exhale Ratio</span>
-          <span class="setting-val">40% / 60%</span>
-        </div>
-        <input type="range" disabled value="40" style="opacity: 0.3;">
-        <p style="font-size: 11px; color: var(--fg-secondary); margin-top: 8px;">Longer exhales maximize parasympathetic vagal response. Ratio is locked for optimal coherence.</p>
+      
+      <button class="btn-block btn-secondary" id="btn-run-baseline" style="border-color: var(--accent-main); color: var(--accent-main);">Run 2-Min Baseline Assessment</button>
+      <button class="btn-block btn-primary" id="btn-close-settings">Done</button>
+    </div>
+  </div>
+
+  <!-- HISTORY MODAL -->
+  <div class="modal-backdrop" id="modal-history">
+    <div class="modal-card">
+      <div class="modal-header">Session History</div>
+      <div id="history-list" class="history-list">
+        <!-- History cards injected here -->
       </div>
-      <button class="btn-block btn-secondary" id="btn-close-settings">Close Settings</button>
+      <button class="btn-block btn-secondary" id="btn-export-history">Export History (CSV)</button>
+      <button class="btn-block btn-primary" id="btn-close-history">Close</button>
     </div>
   </div>
 
@@ -332,6 +379,15 @@
        ============================================================ -->
   <script>
     // ------------------------------------------------------------------
+    // PWA REGISTRATION
+    // ------------------------------------------------------------------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg failed:', err));
+      });
+    }
+
+    // ------------------------------------------------------------------
     // INIT CORE
     // ------------------------------------------------------------------
     const { WakeLockCtrl, BeatDetector } = window.ePATCore;
@@ -351,13 +407,23 @@
       waveCanvas: document.getElementById('wave-canvas'),
       beatFlash: document.getElementById('beat-flash'),
       tachCanvas: document.getElementById('tach-canvas'),
+      baselineOverlay: document.getElementById('baseline-overlay'),
       
+      btnHistory: document.getElementById('btn-history'),
+      modalHistory: document.getElementById('modal-history'),
+      btnCloseHistory: document.getElementById('btn-close-history'),
+      btnExportHistory: document.getElementById('btn-export-history'),
+      historyList: document.getElementById('history-list'),
+
       btnAudio: document.getElementById('btn-audio'),
       audioWaves: document.getElementById('audio-waves'),
 
       btnSettings: document.getElementById('btn-settings'),
       modalSettings: document.getElementById('modal-settings'),
       btnCloseSettings: document.getElementById('btn-close-settings'),
+      btnRunBaseline: document.getElementById('btn-run-baseline'),
+      selectProtocol: document.getElementById('select-protocol'),
+      groupBpm: document.getElementById('group-bpm'),
       sliderBpm: document.getElementById('slider-bpm'),
       valBpm: document.getElementById('val-bpm'),
       
@@ -370,12 +436,23 @@
       sumEndBpm: document.getElementById('sum-end-bpm')
     };
 
+    // Protocols
+    const PROTOCOLS = {
+      resonant: { name: "Resonant", bpm: 6.0, phases: [0.4, 0.0, 0.6, 0.0], customBpm: true }, // 40% in, 60% out
+      box: { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false }, // 4-4-4-4
+      relax: { name: "4-7-8 Relax", bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
+      coherence: { name: "Coherence", bpm: 5.5, phases: [0.5, 0.0, 0.5, 0.0], customBpm: false } // 5 in, 5 out
+    };
+
     // State
     let isSessionActive = false;
+    let isBaselineMode = false;
+    let activeProtocol = 'resonant';
     let targetBpm = 6.0;
-    let inhaleRatio = 0.4; 
+    
     let pacerRaf = null;
     let sessionStartTime = 0;
+    const BASELINE_DUR_MS = 120000;
     
     // Biofeedback Data
     let ibiHistory = []; 
@@ -419,6 +496,75 @@
     resizeCanvases();
 
     // ------------------------------------------------------------------
+    // HISTORY & STORAGE ENGINE
+    // ------------------------------------------------------------------
+    function saveSessionToHistory(rmssd, coherencePct, startBpm, endBpm) {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const durationSec = Math.floor((performance.now() - sessionStartTime) / 1000);
+      
+      const session = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        protocol: isBaselineMode ? "Baseline Assessment" : PROTOCOLS[activeProtocol].name,
+        duration: durationSec,
+        rmssd: Math.round(rmssd),
+        coherence: coherencePct,
+        startBpm: startBpm,
+        endBpm: endBpm
+      };
+      
+      history.unshift(session);
+      localStorage.setItem('kw_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      if (history.length === 0) {
+        ui.historyList.innerHTML = '<div style="text-align:center; color:var(--fg-secondary); padding:32px 0;">No sessions recorded yet.</div>';
+        return;
+      }
+
+      ui.historyList.innerHTML = history.map(s => `
+        <div class="history-card">
+          <div class="hc-left">
+            <div class="hc-date">${new Date(s.date).toLocaleDateString()} &middot; ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
+            <div class="hc-title">${s.protocol}</div>
+          </div>
+          <div class="hc-right">
+            <div class="hc-stat">
+              <span class="hc-stat-val">${s.rmssd}</span>
+              <span class="hc-stat-lbl">RMSSD</span>
+            </div>
+            ${s.protocol !== 'Baseline Assessment' ? `
+            <div class="hc-stat">
+              <span class="hc-stat-val">${s.coherence}%</span>
+              <span class="hc-stat-lbl">Coh</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function exportHistoryCSV() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      if (history.length === 0) return;
+      
+      let csv = "Date,Protocol,Duration_Sec,RMSSD,Coherence_Pct,Start_BPM,End_BPM\n";
+      history.forEach(s => {
+        csv += `${new Date(s.date).toLocaleString()},${s.protocol},${s.duration},${s.rmssd},${s.coherence},${s.startBpm},${s.endBpm}\n`;
+      });
+      
+      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csv);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `KW_Biofeedback_History.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ------------------------------------------------------------------
     // AUDIO ENGINE (Eyes-Closed Guided Breathing)
     // ------------------------------------------------------------------
     function toggleAudio() {
@@ -442,7 +588,7 @@
       gainNode.connect(audioCtx.destination);
     }
 
-    function updateAudioTone(phaseProgress, isInhale) {
+    function updateAudioTone(phaseProgress, state) {
       if (!audioEnabled || !audioCtx) return;
       if (audioCtx.state === 'suspended') audioCtx.resume();
       
@@ -453,15 +599,15 @@
         oscillator.start();
       }
 
-      // Smoothly modulate frequency: Inhale rises 150hz->200hz, Exhale falls 200hz->120hz
-      let freq;
-      if (isInhale) {
-        freq = 150 + (50 * Math.sin(phaseProgress * Math.PI / 2)); // Ease out
-      } else {
-        freq = 200 - (80 * Math.sin(phaseProgress * Math.PI / 2)); // Ease out
+      if (state === 'hold') {
+        gainNode.gain.setTargetAtTime(0.01, audioCtx.currentTime, 0.2);
+        return;
       }
+
+      let freq = state === 'inhale' 
+        ? 150 + (50 * Math.sin(phaseProgress * Math.PI / 2)) 
+        : 200 - (80 * Math.sin(phaseProgress * Math.PI / 2));
       
-      // Keep volume low and soothing
       oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
       gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.1);
     }
@@ -476,59 +622,71 @@
     }
 
     // ------------------------------------------------------------------
-    // PACER ANIMATION LOOP
+    // PACER ANIMATION LOOP (4-Phase Architecture)
     // ------------------------------------------------------------------
     function animatePacer() {
       if (!isSessionActive) return;
 
       const now = performance.now();
       const elapsedMs = now - sessionStartTime;
-      
-      // Timer Update
-      const totalSecs = Math.floor(elapsedMs / 1000);
-      const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-      const s = (totalSecs % 60).toString().padStart(2, '0');
-      ui.sessionTime.textContent = `${m}:${s}`;
 
-      // Pacer Logic
-      const cycleMs = (60 / targetBpm) * 1000;
-      const phase = (elapsedMs % cycleMs) / cycleMs; // 0.0 to 1.0
-      
-      let scale = 1;
-      let color = 'var(--border)';
-      let shadow = '';
-      
-      if (phase < inhaleRatio) {
-        // INHALE
-        if (currentPacerPhase !== 'inhale') {
-          currentPacerPhase = 'inhale';
-          ui.pacerText.textContent = "Inhale";
-          ui.pacerText.style.color = "var(--accent-inhale)";
+      // Check Baseline auto-stop
+      if (isBaselineMode) {
+        const remaining = BASELINE_DUR_MS - elapsedMs;
+        if (remaining <= 0) {
+          stopSession(true);
+          return;
         }
-        const progress = phase / inhaleRatio; 
-        const ease = 1 - Math.pow(1 - progress, 3);
-        scale = 1 + (ease * 0.4); 
-        color = 'var(--accent-inhale)';
-        shadow = `0 0 30px rgba(96, 165, 250, ${0.2 + (ease * 0.3)})`;
-        updateAudioTone(progress, true);
+        const rSec = Math.floor(remaining / 1000);
+        ui.sessionTime.textContent = `${Math.floor(rSec/60).toString().padStart(2,'0')}:${(rSec%60).toString().padStart(2,'0')}`;
       } else {
-        // EXHALE
-        if (currentPacerPhase !== 'exhale') {
-          currentPacerPhase = 'exhale';
-          ui.pacerText.textContent = "Exhale";
-          ui.pacerText.style.color = "var(--accent-exhale)";
-        }
-        const progress = (phase - inhaleRatio) / (1 - inhaleRatio); 
-        const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        scale = 1.4 - (ease * 0.4); 
-        color = 'var(--accent-exhale)';
-        shadow = `0 0 15px rgba(167, 139, 250, ${0.5 - (ease * 0.3)})`;
-        updateAudioTone(progress, false);
+        const totalSecs = Math.floor(elapsedMs / 1000);
+        ui.sessionTime.textContent = `${Math.floor(totalSecs/60).toString().padStart(2,'0')}:${(totalSecs%60).toString().padStart(2,'0')}`;
       }
 
-      ui.pacerRing.style.transform = `scale(${scale})`;
-      ui.pacerRing.style.borderColor = color;
-      ui.pacerRing.style.boxShadow = shadow;
+      if (!isBaselineMode) {
+        const pDef = PROTOCOLS[activeProtocol];
+        const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
+        const cycleMs = (60 / currentBpm) * 1000;
+        const phaseProgress = (elapsedMs % cycleMs) / cycleMs; // 0.0 to 1.0
+        
+        let scale = 1; let color = 'var(--border)'; let shadow = ''; let text = ""; let tColor = "";
+        const [pIn, pHIn, pOut, pHOut] = pDef.phases;
+        
+        if (phaseProgress < pIn) {
+          // INHALE
+          const p = phaseProgress / pIn; 
+          const ease = 1 - Math.pow(1 - p, 3);
+          scale = 1 + (ease * 0.4); 
+          color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96, 165, 250, ${0.2 + (ease * 0.3)})`; text = "Inhale";
+          currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
+        } else if (phaseProgress < pIn + pHIn) {
+          // HOLD IN
+          scale = 1.4; 
+          color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96, 165, 250, 0.5)`; text = "Hold";
+          currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
+        } else if (phaseProgress < pIn + pHIn + pOut) {
+          // EXHALE
+          const p = (phaseProgress - (pIn + pHIn)) / pOut; 
+          const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          scale = 1.4 - (ease * 0.4); 
+          color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167, 139, 250, ${0.5 - (ease * 0.3)})`; text = "Exhale";
+          currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
+        } else {
+          // HOLD OUT
+          scale = 1.0; 
+          color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167, 139, 250, 0.2)`; text = "Hold";
+          currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
+        }
+
+        ui.pacerRing.style.transform = `scale(${scale})`;
+        ui.pacerRing.style.borderColor = color;
+        ui.pacerRing.style.boxShadow = shadow;
+        if (ui.pacerText.textContent !== text) {
+          ui.pacerText.textContent = text;
+          ui.pacerText.style.color = color;
+        }
+      }
 
       drawTachogram(now);
       pacerRaf = requestAnimationFrame(animatePacer);
@@ -538,26 +696,24 @@
     // COHERENCE ENGINE
     // ------------------------------------------------------------------
     function evaluateCoherence(ibiMs) {
-      if (ibiHistory.length < 2) return;
+      if (ibiHistory.length < 2 || isBaselineMode) return;
       
       const prevIbi = ibiHistory[ibiHistory.length - 2].ibi;
       
-      // ARTIFACT FILTER: Ignore impossible physiological jumps (>30% in one beat)
+      // ARTIFACT FILTER
       const pctChange = Math.abs(ibiMs - prevIbi) / prevIbi;
-      if (pctChange > 0.30) return; // Skip scoring this beat, it's likely noise
+      if (pctChange > 0.30) return; 
 
       const dIbi = ibiMs - prevIbi; 
       let isCoherent = false;
       
-      // Inhaling = HR up = IBI down (dIbi < 0)
       if (currentPacerPhase === 'inhale' && dIbi <= 0) isCoherent = true;
-      // Exhaling = HR down = IBI up (dIbi > 0)
       if (currentPacerPhase === 'exhale' && dIbi >= 0) isCoherent = true;
+      // In hold phases, any stable HR is acceptable
 
       totalValidBeats++;
       if (isCoherent) totalCoherentBeats++;
 
-      // Low pass filter for visual gauge
       const targetScore = isCoherent ? 100 : 0;
       coherenceScore = (coherenceScore * 0.8) + (targetScore * 0.2);
       
@@ -591,7 +747,6 @@
       
       for (let i = 0; i < waveBuffer.length; i++) {
         const x = xOff + i * xStep;
-        // Invert Y so peaks are at the top
         const y = pad + ((mx - waveBuffer[i]) / range) * (height - pad * 2);
         i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
       }
@@ -619,7 +774,7 @@
       const yMin = minIbi - padding;
       const yMax = maxIbi + padding;
 
-      // Draw Grid Lines (Mean)
+      // Draw Grid Lines
       const mean = ibis.reduce((a, b) => a + b, 0) / ibis.length;
       const meanY = height - (((mean - yMin) / (yMax - yMin)) * height);
       tachCtx.beginPath();
@@ -654,7 +809,7 @@
       }
       tachCtx.stroke();
 
-      // Draw dots on beats
+      // Draw dots
       for (let i = 0; i < visibleData.length; i++) {
         const point = visibleData[i];
         const age = now - point.time;
@@ -681,8 +836,7 @@
         ui.fingerText.textContent = "Adjust Finger";
         ui.liveBpm.classList.add('dim');
         ui.liveBpm.textContent = "--";
-        waveBuffer = [];
-        drawWave();
+        waveBuffer = []; drawWave();
       }
     }
 
@@ -694,14 +848,11 @@
       
       ui.liveBpm.textContent = bpm;
       
-      if (baselineBpm === 0 && ibiHistory.length > 3) {
-        baselineBpm = bpm;
-      }
+      if (baselineBpm === 0 && ibiHistory.length > 3) baselineBpm = bpm;
 
       ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs), bpm: bpm });
       evaluateCoherence(ibiMs);
 
-      // Trigger UI flash
       ui.beatFlash.classList.add('flash');
       setTimeout(() => ui.beatFlash.classList.remove('flash'), 80);
     }
@@ -721,7 +872,9 @@
     // ------------------------------------------------------------------
     // SESSION MANAGEMENT
     // ------------------------------------------------------------------
-    async function startSession() {
+    async function startSession(baselineTrigger = false) {
+      isBaselineMode = baselineTrigger;
+      
       ibiHistory = []; waveBuffer = [];
       coherenceScore = 50; totalCoherentBeats = 0; totalValidBeats = 0; baselineBpm = 0;
       
@@ -730,6 +883,11 @@
       
       ui.btnMain.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
+      
+      if (isBaselineMode) {
+        ui.baselineOverlay.classList.add('active');
+        ui.modalSettings.classList.remove('show');
+      }
 
       await WakeLockCtrl.request();
 
@@ -769,6 +927,7 @@
       ui.pacerRing.style.boxShadow = 'none';
       ui.pacerText.textContent = "Ready";
       ui.pacerText.style.color = "var(--fg-secondary)";
+      ui.baselineOverlay.classList.remove('active');
       
       ui.fingerDot.classList.remove('active');
       ui.fingerText.textContent = "Awaiting Signal";
@@ -783,52 +942,27 @@
     }
 
     function generateSummary() {
-      // 1. Calculate RMSSD (Root Mean Square of Successive Differences)
+      // Calculate RMSSD
       let sumSq = 0;
       let validDiffs = 0;
       for (let i = 1; i < ibiHistory.length; i++) {
         const diff = ibiHistory[i].ibi - ibiHistory[i-1].ibi;
-        // Ignore extreme ectopic jumps for RMSSD sanity
-        if (Math.abs(diff) < 500) { 
+        if (Math.abs(diff) < 500) {  // Ectopic filter
           sumSq += (diff * diff);
           validDiffs++;
         }
       }
       const rmssd = validDiffs > 0 ? Math.sqrt(sumSq / validDiffs) : 0;
-      
-      // 2. Coherence %
       const coherencePct = totalValidBeats > 0 ? Math.round((totalCoherentBeats / totalValidBeats) * 100) : 0;
-
-      // 3. Ending BPM
       const endBpm = ibiHistory[ibiHistory.length - 1].bpm;
 
       ui.sumRmssd.textContent = Math.round(rmssd);
-      ui.sumCoherence.textContent = `${coherencePct}%`;
+      ui.sumCoherence.textContent = isBaselineMode ? "N/A" : `${coherencePct}%`;
       ui.sumStartBpm.textContent = baselineBpm || "--";
       ui.sumEndBpm.textContent = endBpm;
 
+      saveSessionToHistory(rmssd, coherencePct, baselineBpm, endBpm);
       ui.modalSummary.classList.add('show');
-    }
-
-    function exportSessionCSV() {
-      if (ibiHistory.length === 0) return;
-      
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Timestamp_MS,InterBeatInterval_MS,AverageBPM\n";
-      
-      const startT = ibiHistory[0].time;
-      ibiHistory.forEach(beat => {
-        const relativeTime = Math.round(beat.time - startT);
-        csvContent += `${relativeTime},${beat.ibi},${beat.bpm}\n`;
-      });
-      
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `KW_Biofeedback_Session_${new Date().getTime()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
 
     // ------------------------------------------------------------------
@@ -836,21 +970,41 @@
     // ------------------------------------------------------------------
     ui.btnMain.addEventListener('click', () => {
       if (isSessionActive) stopSession(true);
-      else startSession();
+      else startSession(false);
     });
 
     ui.btnAudio.addEventListener('click', toggleAudio);
+    
+    // History Modal
+    ui.btnHistory.addEventListener('click', () => { renderHistory(); ui.modalHistory.classList.add('show'); });
+    ui.btnCloseHistory.addEventListener('click', () => ui.modalHistory.classList.remove('show'));
+    ui.btnExportHistory.addEventListener('click', exportHistoryCSV);
+
+    // Settings Modal
     ui.btnSettings.addEventListener('click', () => ui.modalSettings.classList.add('show'));
     ui.btnCloseSettings.addEventListener('click', () => ui.modalSettings.classList.remove('show'));
-    
+    ui.btnRunBaseline.addEventListener('click', () => startSession(true));
+
+    // Summary Modal
     ui.btnCloseSummary.addEventListener('click', () => {
       ui.modalSummary.classList.remove('show');
-      // Reset charts behind the scenes
       waveBuffer = []; drawWave();
       ibiHistory = []; drawTachogram(performance.now());
     });
     
-    ui.btnExport.addEventListener('click', exportSessionCSV);
+    ui.btnExport.addEventListener('click', exportSessionCSV); // Export single session
+
+    // Protocols & Slider
+    ui.selectProtocol.addEventListener('change', (e) => {
+      activeProtocol = e.target.value;
+      if (PROTOCOLS[activeProtocol].customBpm) {
+        ui.groupBpm.style.display = 'block';
+        ui.pacerText.textContent = "Ready";
+      } else {
+        ui.groupBpm.style.display = 'none';
+        ui.pacerText.textContent = PROTOCOLS[activeProtocol].name;
+      }
+    });
 
     ui.sliderBpm.addEventListener('input', (e) => {
       targetBpm = parseFloat(e.target.value);
@@ -859,6 +1013,7 @@
 
     // Default audio toggle UI setup
     ui.audioWaves.style.display = 'none';
+    renderHistory(); // Initial render
 
   </script>
 </body>
