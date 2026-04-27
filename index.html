@@ -277,7 +277,7 @@
             <video id="video-feed" autoplay playsinline muted></video>
           </div>
           <div class="guide-text">Cover the camera</div>
-          <div class="guide-subtext">Center your fingertip over the rear lens.</div>
+          <div class="guide-subtext">Center your fingertip over the rear lens. Breathe from your belly, not your chest.</div>
         </div>
 
         <div id="baseline-overlay">
@@ -498,6 +498,7 @@
     // RF steps: Lehrer et al. protocol, 6.5→4.5 in 0.5 BPM steps
     const RF_STEPS = [6.5, 6.0, 5.5, 5.0, 4.5];
     const RF_STEP_DURATION_MS = 120000; // 2 min per step
+    const RF_WARMUP_MS = 30000; // discard first 30s of each step
 
     // ----------------------------------------------------------------
     // STATE
@@ -739,17 +740,24 @@
         let scale = 1, color = 'var(--border)', shadow = '', text = '';
 
         if (phaseProgress < pIn) {
-          const p = phaseProgress / pIn, ease = 1 - Math.pow(1-p, 3);
-          scale = 1 + ease*0.4; color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(96,165,250,${0.2+ease*0.3})`; text = 'Inhale';
-          currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
+  const p = phaseProgress / pIn;
+  const ease = Math.sin(p * Math.PI / 2);  // sine ease-in
+  scale = 1 + ease * 0.4;
+  color = 'var(--accent-inhale)';
+  shadow = `0 0 30px rgba(96,165,250,${0.2 + ease * 0.3})`;
+  text = 'Inhale';
+  currentPacerPhase = 'inhale'; updateAudioTone(p, 'inhale');
         } else if (phaseProgress < pIn + pHIn) {
           scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(96,165,250,0.5)'; text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
         } else if (phaseProgress < pIn + pHIn + pOut) {
-          const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
-          const ease = p < 0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
-          scale = 1.4 - ease*0.4; color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(167,139,250,${0.5-ease*0.3})`; text = 'Exhale';
-          currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
+  const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
+  const ease = 1 - Math.sin((1 - p) * Math.PI / 2);  // sine ease-out, mirrors inhale
+  scale = 1.4 - ease * 0.4;
+  color = 'var(--accent-exhale)';
+  shadow = `0 0 15px rgba(167,139,250,${0.5 - ease * 0.3})`;
+  text = 'Exhale';
+  currentPacerPhase = 'exhale'; updateAudioTone(p, 'exhale');
         } else {
           scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(167,139,250,0.2)'; text = 'Hold';
           currentPacerPhase = 'hold'; updateAudioTone(0, 'hold');
@@ -953,7 +961,7 @@
         isCalibrating = true;
         
         if (guideText) guideText.textContent = 'Hold still';
-        if (guideSubtext) guideSubtext.textContent = 'Illuminating capillaries...';
+        if (guideSubtext) guideSubtext.innerHTML = 'Illuminating capillaries…<br>Belly breathing, not chest.';
         
         calibrationTimeout = setTimeout(() => {
           if (isCalibrating && isSessionActive) {
@@ -977,7 +985,10 @@
       currentSessionIbis.push(entry);
       tachDirty=true; poincareDirty=true;
       evaluateCoherence(ibiMs);
-      if (isRfMode) rfStepIbis.push(Math.round(ibiMs));
+      if (isRfMode) {
+        const stepElapsed = performance.now() - sessionStartTime - (rfStepIndex * RF_STEP_DURATION_MS);
+        if (stepElapsed > RF_WARMUP_MS) rfStepIbis.push(Math.round(ibiMs));
+      }
       ui.beatFlash.classList.add('flash');
       setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
     }
@@ -1091,8 +1102,10 @@
         finishRfAssessment();
       } else {
         rfRunning = true;
-        ui.rfStatusText.textContent = `Breathing at ${RF_STEPS[rfStepIndex]} BPM — hold still and follow the pacer`;
-        updateRfStepDisplay();
+ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling…`;
+setTimeout(() => {
+  if (rfRunning) ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — measuring`;
+}, RF_WARMUP_MS);
       }
     }
 
@@ -1142,7 +1155,7 @@
       
       try {
         await startSession(false, true);
-        ui.rfStatusText.textContent=`Breathing at ${RF_STEPS[0]} BPM — hold still and follow the pacer`;
+        ui.rfStatusText.textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling (30s)…`;
         updateRfStepDisplay();
         
         // NEW: Hide the modal to reveal the breathing pacer!
