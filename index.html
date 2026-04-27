@@ -997,7 +997,7 @@
       coherenceScore=50; totalCoherentBeats=0; totalValidBeats=0; baselineBpm=0;
       tachDirty=false; poincareDirty=false;
       ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
-      ui.trainingTip.textContent='Target: 20 min/day';
+      ui.trainingTip.textContent = isRfMode ? 'RF Assessment' : 'Target: 20 min/day';
       ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
       
@@ -1104,10 +1104,15 @@
       const barEl  = document.getElementById(`rf-bar-${winnerIdx}`);
       if (stepEl) stepEl.classList.add('winner');
       if (barEl)  barEl.style.background='var(--coh-high)';
+      
       // Save & apply
       savedRf=winnerBpm; localStorage.setItem('kw_rf', winnerBpm.toString());
       targetBpm=winnerBpm; ui.sliderBpm.value=winnerBpm; ui.valBpm.textContent=`${winnerBpm.toFixed(1)} breaths/min`;
       updateRfSavedBadge();
+      
+      // NEW: Bring the modal back onto the screen!
+      ui.modalRf.classList.add('show');
+      
       ui.rfResultVal.textContent=winnerBpm.toFixed(1);
       ui.rfResultBox.style.display='block';
       ui.rfStatusText.textContent='Assessment complete. This rate produced the largest heart rate oscillations for you.';
@@ -1126,14 +1131,30 @@
     }
 
     async function startRfAssessment() {
-      rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; rfRunning=false;
+      if (rfRunning) return; 
+      rfRunning = true; 
+      
+      ui.btnRfAction.disabled = true; 
+      ui.btnRfAction.style.opacity = '0.5';
+
+      rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[];
       ui.rfStatusText.textContent='Starting camera…';
+      
       try {
         await startSession(false, true);
-        rfRunning=true;
         ui.rfStatusText.textContent=`Breathing at ${RF_STEPS[0]} BPM — hold still and follow the pacer`;
         updateRfStepDisplay();
-      } catch(e) { ui.rfStatusText.textContent='Camera error. Please allow permissions.'; }
+        
+        // NEW: Hide the modal to reveal the breathing pacer!
+        ui.modalRf.classList.remove('show');
+        
+      } catch(e) { 
+        ui.rfStatusText.textContent='Camera error. Please allow permissions.'; 
+        rfRunning = false; 
+      } finally {
+        ui.btnRfAction.disabled = false;
+        ui.btnRfAction.style.opacity = '1';
+      }
     }
 
     function updateRfSavedBadge() {
@@ -1166,7 +1187,6 @@
     setupModal(ui.modalSettings, document.getElementById('modal-settings-card'), ()=>ui.modalSettings.classList.remove('show'));
 
     ui.btnFindRf.addEventListener('click', ()=>{ ui.modalSettings.classList.remove('show'); buildRfStepDisplay(); resetRfModal(); ui.modalRf.classList.add('show'); });
-    ui.btnRfAction.addEventListener('click', startRfAssessment);
     ui.btnRfCancel.addEventListener('click', ()=>{ if(isSessionActive&&isRfMode) stopSession(false); ui.modalRf.classList.remove('show'); resetRfModal(); ui.modalSettings.classList.add('show'); });
     setupModal(ui.modalRf, document.getElementById('modal-rf-card'), ()=>{ if(isSessionActive&&isRfMode) stopSession(false); ui.modalRf.classList.remove('show'); resetRfModal(); });
 
