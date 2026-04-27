@@ -185,6 +185,13 @@
     }
     #rf-saved-badge.show { display: flex; }
 
+    .btn-delete {
+      background: transparent; border: none; color: var(--fg-secondary);
+      cursor: pointer; padding: 6px; margin-left: 4px; border-radius: 6px;
+      transition: color 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-delete:hover { color: var(--coh-low); background: rgba(248,113,113,0.1); }
+
 /* CAMERA GUIDE */
     @keyframes pulse-border {
       0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
@@ -600,10 +607,13 @@
             <div class="hc-date">${new Date(s.date).toLocaleDateString()} &middot; ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
             <div class="hc-title">${s.protocol}</div>
           </div>
-          <div class="hc-right">
+          <div class="hc-right" style="align-items: center;">
             <div class="hc-stat"><span class="hc-stat-val">${s.rmssd}</span><span class="hc-stat-lbl">RMSSD</span></div>
             <div class="hc-stat"><span class="hc-stat-val">${s.sdnn||'--'}</span><span class="hc-stat-lbl">SDNN</span></div>
             ${!isBaseline ? `<div class="hc-stat"><span class="hc-stat-val">${s.coherence}%</span><span class="hc-stat-lbl">Coh</span></div>` : ''}
+            <button class="btn-delete" data-id="${s.id}" aria-label="Delete Session">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </div>
         </div>`;
       }).join('');
@@ -1157,6 +1167,23 @@
 
     ui.selectProtocol.addEventListener('change', e=>{ activeProtocol=e.target.value; const p=PROTOCOLS[activeProtocol]; ui.valProtocol.textContent=p.name; ui.groupBpm.style.display=p.customBpm?'block':'none'; });
     ui.sliderBpm.addEventListener('input', e=>{ targetBpm=parseFloat(e.target.value); ui.valBpm.textContent=`${targetBpm.toFixed(1)} breaths/min`; });
+
+    // History Delete Listener
+    ui.historyList.addEventListener('click', e => {
+      const btn = e.target.closest('.btn-delete');
+      if (!btn) return; // Ignore clicks that aren't on the delete button
+      
+      const sessionId = parseInt(btn.dataset.id, 10);
+      if (confirm('Are you sure you want to delete this session?')) {
+        let history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+        // Filter out the one matching ID
+        history = history.filter(s => s.id !== sessionId);
+        // Save the clean array back to storage
+        localStorage.setItem('kw_history', JSON.stringify(history));
+        // Re-render the UI instantly
+        renderHistory();
+      }
+    });
 
     // ----------------------------------------------------------------
     // INIT
