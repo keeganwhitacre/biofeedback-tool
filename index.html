@@ -220,6 +220,19 @@
     }
     .guide-text { font-size: 13px; color: var(--fg-primary); font-weight: 700; text-align: center; margin-bottom: 4px; }
     .guide-subtext { font-size: 11px; color: var(--fg-secondary); text-align: center; max-width: 140px; line-height: 1.4; }
+
+    /* FOCUS MODE */
+    body.focus-mode header,
+    body.focus-mode #signal-card,
+    body.focus-mode #chart-section {
+      display: none !important;
+    }
+
+/* Adjust main stage to take up the newly freed space gracefully */
+    body.focus-mode #main-stage {
+      flex: 1;
+      justify-content: center;
+    }
     
   </style>
 </head>
@@ -344,6 +357,18 @@
         </div>
         <input type="range" id="slider-bpm" min="4.5" max="6.5" step="0.5" value="6.0">
       </div>
+      <div class="setting-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div style="font-size: 13px; color: var(--fg-secondary);">
+    <div style="color: var(--fg-primary); font-weight: 600; margin-bottom: 2px;">Focus Mode</div>
+    Hide charts and raw signals during session
+  </div>
+  <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+    <input type="checkbox" id="toggle-focus" style="opacity: 0; width: 0; height: 0;">
+    <span id="focus-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-dark); border: 1px solid var(--border); transition: .4s; border-radius: 24px;">
+      <span id="focus-knob" style="position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--fg-secondary); transition: .4s; border-radius: 50%;"></span>
+    </span>
+  </label>
+</div>
       <button class="btn-block btn-secondary" id="btn-find-rf" style="border-color: var(--accent-main); color: var(--accent-main);">Find My Resonant Frequency</button>
       <button class="btn-block btn-secondary" id="btn-run-baseline">Run 2-Min Baseline Assessment</button>
       <button class="btn-block btn-primary" id="btn-close-settings">Done</button>
@@ -483,7 +508,12 @@
       sumSd1:          document.getElementById('sum-sd1'),
       sumSd2:          document.getElementById('sum-sd2'),
       summaryPoincare: document.getElementById('summary-poincare'),
+      toggleFocus:     document.getElementById('toggle-focus'),
+      focusKnob:       document.getElementById('focus-knob'),
+      focusSlider:     document.getElementById('focus-slider')
     };
+
+    let isFocusMode = localStorage.getItem('kw_focus_mode') === 'true';
 
     // ----------------------------------------------------------------
     // PROTOCOLS
@@ -515,6 +545,8 @@
     let poincareDirty   = false;
     let sessionStartTime = 0;
     const BASELINE_DUR_MS = 120000;
+
+    let isFocusMode = localStorage.getItem('kw_focus_mode') === 'true';
 
     let ibiHistory       = [];
     let currentSessionIbis = [];
@@ -819,14 +851,37 @@
       if (ibiHistory.length < 2 || isBaselineMode || isRfMode) return;
       const prev = ibiHistory[ibiHistory.length-2].ibi;
       const lm   = ibiHistory.slice(-5).reduce((s,d) => s+d.ibi, 0) / Math.min(5, ibiHistory.length);
+      
+      // Ignore massive jumps (e.g., a missed camera frame)
       if (Math.abs(ibiMs - prev) / lm > 0.20) return;
+      
       const d = ibiMs - prev;
-      let coherent = false;
-      if (currentPacerPhase === 'inhale' && d <= 0) coherent = true;
-      if (currentPacerPhase === 'exhale' && d >= 0) coherent = true;
+      let coherentScoreForBeat = 50; // Default to neutral
+
+      // 1. Evaluate the beat direction, with a 5ms "noise floor"
+      if (Math.abs(d) < 5) {
+        // Heart rate barely changed. Count as neutral (50) to prevent jitter.
+        coherentScoreForBeat = 50;
+      } else {
+        if (currentPacerPhase === 'inhale') {
+          // During inhale, IBI should decrease (HR speeds up)
+          coherentScoreForBeat = (d < 0) ? 100 : 0; 
+        } else if (currentPacerPhase === 'exhale') {
+          // During exhale, IBI should increase (HR slows down)
+          coherentScoreForBeat = (d > 0) ? 100 : 0; 
+        } else {
+          // During 'hold' phases, we don't strictly penalize direction
+          coherentScoreForBeat = 50;
+        }
+      }
+
       totalValidBeats++;
-      if (coherent) totalCoherentBeats++;
-      coherenceScore = coherenceScore*0.8 + (coherent ? 100 : 0)*0.2;
+      if (coherentScoreForBeat === 100) totalCoherentBeats++;
+
+      // 2. Smoother Math (92% historical trend, 8% new beat impact)
+      coherenceScore = coherenceScore * 0.92 + coherentScoreForBeat * 0.08;
+
+      // 3. Update the UI
       ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
       ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
     }
@@ -1014,6 +1069,10 @@
       
       if (isBaselineMode) { ui.baselineOverlay.classList.add('active'); ui.modalSettings.classList.remove('show'); }
       else { ui.cameraGuide.classList.add('active'); }
+
+      if (isFocusMode && !isBaselineMode && !isRfMode) {
+        document.body.classList.add('focus-mode');
+      }
       
       await WakeLockCtrl.request();
       
@@ -1034,6 +1093,7 @@
     }
 
     async function stopSession(showSummary=true) {
+      document.body.classList.remove('focus-mode');
       isSessionActive=false; cancelAnimationFrame(pacerRaf); stopAudioTone();
       await BeatDetector.stop(); WakeLockCtrl.release();
       ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training Session`;
@@ -1183,6 +1243,16 @@ setTimeout(() => {
       if (card) card.addEventListener('click', e=>e.stopPropagation());
     }
 
+    // Init toggle state on load
+    if (isFocusMode) {
+      ui.toggleFocus.checked = true;
+      ui.focusSlider.style.backgroundColor = 'var(--accent-main)';
+      ui.focusKnob.style.transform = 'translateX(20px)';
+      ui.focusKnob.style.backgroundColor = '#fff';
+    }
+
+
+
     // ----------------------------------------------------------------
     // EVENT LISTENERS
     // ----------------------------------------------------------------
@@ -1226,6 +1296,22 @@ setTimeout(() => {
         renderHistory();
       }
     });
+
+    // Listen for changes
+      ui.toggleFocus.addEventListener('change', (e) => {
+        isFocusMode = e.target.checked;
+        localStorage.setItem('kw_focus_mode', isFocusMode);
+        
+        if (isFocusMode) {
+          ui.focusSlider.style.backgroundColor = 'var(--accent-main)';
+          ui.focusKnob.style.transform = 'translateX(20px)';
+          ui.focusKnob.style.backgroundColor = '#fff';
+        } else {
+          ui.focusSlider.style.backgroundColor = 'var(--bg-dark)';
+          ui.focusKnob.style.transform = 'translateX(0)';
+          ui.focusKnob.style.backgroundColor = 'var(--fg-secondary)';
+        }
+      });
 
     // ----------------------------------------------------------------
     // INIT
