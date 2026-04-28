@@ -1206,7 +1206,11 @@
     }
 
     function handlePPGSample(s) { waveBuffer.push(s); if(waveBuffer.length>WAVE_MAX)waveBuffer.shift(); requestAnimationFrame(drawWave); }
-    function handleSQI(sqi) { ui.sqiText.textContent=`SQI: ${(sqi*100).toFixed(1)}%`; ui.sqiText.style.color=sqi>0.01?'var(--coh-high)':'var(--coh-med)'; }
+    function handleSQI(sqiRed, sqiGreen, activeChannel) {
+  const sqi = activeChannel === 'green' ? sqiGreen : sqiRed;
+  ui.sqiText.textContent = `SQI: ${(sqi * 100).toFixed(2)}%`;
+  ui.sqiText.style.color = sqi > 0.003 ? 'var(--coh-high)' : 'var(--coh-med)';
+}
 
     // ----------------------------------------------------------------
     // SESSION MANAGEMENT
