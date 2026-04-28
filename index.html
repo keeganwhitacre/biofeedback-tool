@@ -72,7 +72,8 @@
     #live-bpm.dim { opacity: 0.3; }
     #pacer-instruction { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--fg-secondary); margin-top: 8px; transition: color 1s ease; }
 
-    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px; }
+    #coherence-wrapper { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px; transition: opacity 0.3s; }
+    #coherence-wrapper.hidden { opacity: 0; pointer-events: none; }
     #coherence-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-secondary); font-weight: 600; }
     #coherence-bar-bg { width: 100%; height: 4px; border-radius: 2px; background: var(--bg-card); border: 1px solid var(--border); overflow: hidden; }
     #coherence-bar-fill { height: 100%; width: 50%; border-radius: 2px; background: var(--coh-med); transition: width 0.3s ease, background-color 0.5s ease; }
@@ -367,6 +368,7 @@
       </div>
       <button class="btn-block btn-secondary" id="btn-find-rf" style="border-color: var(--accent-main); color: var(--accent-main);">Find My Resonant Frequency</button>
       <button class="btn-block btn-secondary" id="btn-run-baseline">Run 2-Min Baseline Assessment</button>
+      <button class="btn-block btn-secondary" id="btn-free-record" style="border-color: var(--coh-high); color: var(--coh-high);">Free Recording (No Pacer)</button>
       <button class="btn-block btn-primary" id="btn-close-settings">Done</button>
     </div>
   </div>
@@ -455,6 +457,7 @@
       btnMain:         document.getElementById('btn-main'),
       sessionTime:     document.getElementById('session-time'),
       trainingTip:     document.getElementById('training-tip'),
+      cohWrapper:      document.getElementById('coherence-wrapper'),
       cohBar:          document.getElementById('coherence-bar-fill'),
       waveCanvas:      document.getElementById('wave-canvas'),
       beatFlash:       document.getElementById('beat-flash'),
@@ -478,6 +481,7 @@
       modalSettings:   document.getElementById('modal-settings'),
       btnCloseSettings:document.getElementById('btn-close-settings'),
       btnRunBaseline:  document.getElementById('btn-run-baseline'),
+      btnFreeRecord:   document.getElementById('btn-free-record'),
       btnFindRf:       document.getElementById('btn-find-rf'),
       rfSavedBadge:    document.getElementById('rf-saved-badge'),
       rfBadgeText:     document.getElementById('rf-badge-text'),
@@ -528,6 +532,7 @@
     // ----------------------------------------------------------------
     let isSessionActive = false;
     let isBaselineMode  = false;
+    let isFreeMode      = false;
     let calibrationTimeout = null;
     let isCalibrating = false;
     let isRfMode        = false;
@@ -560,6 +565,9 @@
     let rfRunning    = false;
 
     let savedRf = parseFloat(localStorage.getItem('kw_rf') || '0');
+
+    // helper — true when the session has no breathing pacer attached (baseline, RF, or free)
+    function isUnpacedMode() { return isBaselineMode || isRfMode || isFreeMode; }
 
     // ----------------------------------------------------------------
     // AUDIO ENGINE
@@ -758,7 +766,8 @@
 
       if (audioEnabled) {
         AudioEngine.init();
-        if (isSessionActive && !isBaselineMode) {
+        // Audio pacer is meaningless without a visual pacer — skip in any unpaced mode
+        if (isSessionActive && !isUnpacedMode()) {
           const { cycleS, phases } = getActiveCycleParams();
           AudioEngine.connect(cycleS, phases);
         }
@@ -768,7 +777,7 @@
     }
 
     function startAudioIfEnabled() {
-      if (!audioEnabled || isBaselineMode) return;
+      if (!audioEnabled || isUnpacedMode()) return;
       const { cycleS, phases } = getActiveCycleParams();
       AudioEngine.connect(cycleS, phases);
     }
@@ -817,9 +826,13 @@
     function saveSessionToHistory(rmssd, sdnn, coherencePct, endBpm, sd1, sd2) {
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
       const durationSec = Math.floor((performance.now() - sessionStartTime) / 1000);
+      let protocolLabel;
+      if (isBaselineMode) protocolLabel = 'Baseline';
+      else if (isFreeMode) protocolLabel = 'Free Recording';
+      else protocolLabel = PROTOCOLS[activeProtocol].name;
       history.unshift({
         id: Date.now(), date: new Date().toISOString(),
-        protocol: isBaselineMode ? 'Baseline' : PROTOCOLS[activeProtocol].name,
+        protocol: protocolLabel,
         duration: durationSec,
         rmssd: Math.round(rmssd), sdnn: Math.round(sdnn),
         coherence: coherencePct, endBpm,
@@ -836,7 +849,7 @@
         return;
       }
       ui.historyList.innerHTML = history.map(s => {
-        const isBaseline = s.protocol === 'Baseline';
+        const noCoherence = s.protocol === 'Baseline' || s.protocol === 'Free Recording';
         return `<div class="history-card">
           <div class="hc-left">
             <div class="hc-date">${new Date(s.date).toLocaleDateString()} &middot; ${Math.floor(s.duration/60)}m ${s.duration%60}s</div>
@@ -845,7 +858,7 @@
           <div class="hc-right" style="align-items: center;">
             <div class="hc-stat"><span class="hc-stat-val">${s.rmssd}</span><span class="hc-stat-lbl">RMSSD</span></div>
             <div class="hc-stat"><span class="hc-stat-val">${s.sdnn||'--'}</span><span class="hc-stat-lbl">SDNN</span></div>
-            ${!isBaseline ? `<div class="hc-stat"><span class="hc-stat-val">${s.coherence}%</span><span class="hc-stat-lbl">Coh</span></div>` : ''}
+            ${!noCoherence ? `<div class="hc-stat"><span class="hc-stat-val">${s.coherence}%</span><span class="hc-stat-lbl">Coh</span></div>` : `<div class="hc-stat"><span class="hc-stat-val">${s.endBpm||'--'}</span><span class="hc-stat-lbl">BPM</span></div>`}
             <button class="btn-delete" data-id="${s.id}" aria-label="Delete Session">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
@@ -918,6 +931,10 @@
         if (rem <= 0) { stopSession(true); return; }
         const s = Math.floor(rem / 1000);
         ui.sessionTime.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+      } else if (isFreeMode) {
+        // Free recording — count up indefinitely. User ends manually.
+        const total = Math.floor(elapsedMs / 1000);
+        ui.sessionTime.textContent = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
       } else if (isRfMode) {
         const stepElapsed = elapsedMs - rfStepIndex * RF_STEP_DURATION_MS;
         const rem = RF_STEP_DURATION_MS - stepElapsed;
@@ -932,12 +949,13 @@
         if (total >= 1200) ui.trainingTip.textContent = '✓ 20 min reached';
       }
 
-      if (!isBaselineMode) {
+      // Pacer ring animation — only run when there's an actual breathing protocol
+      if (!isUnpacedMode()) {
         const pDef = PROTOCOLS[activeProtocol];
-        const currentBpm = isRfMode ? RF_STEPS[rfStepIndex] : (pDef.customBpm ? targetBpm : pDef.bpm);
+        const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
         const cycleMs = (60 / currentBpm) * 1000;
         const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
-        const [pIn, pHIn, pOut] = isRfMode ? [0.5, 0.0, 0.5] : pDef.phases;
+        const [pIn, pHIn, pOut] = pDef.phases;
         let scale = 1, color = 'var(--border)', shadow = '', text = '';
 
         if (phaseProgress < pIn) {
@@ -952,7 +970,7 @@
           scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(96,165,250,0.5)'; text = 'Hold';
           currentPacerPhase = 'hold';
         } else if (phaseProgress < pIn + pHIn + pOut) {
-          const p = (phaseProgress - pIn - pHIn) / (isRfMode ? 0.5 : pDef.phases[2]);
+          const p = (phaseProgress - pIn - pHIn) / pDef.phases[2];
           const ease = 1 - Math.sin((1 - p) * Math.PI / 2);
           scale = 1.4 - ease * 0.4;
           color = 'var(--accent-exhale)';
@@ -968,6 +986,12 @@
         ui.pacerRing.style.borderColor = color;
         ui.pacerRing.style.boxShadow = shadow;
         if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
+      } else if (isFreeMode) {
+        // Free mode: keep ring static, swap label to "Recording" once we have signal
+        if (!isCalibrating && ui.pacerText.textContent !== 'Recording') {
+          ui.pacerText.textContent = 'Recording';
+          ui.pacerText.style.color = 'var(--coh-high)';
+        }
       }
 
       if (tachDirty && activeChartTab === 'tach') { drawTachogram(now); tachDirty = false; }
@@ -1014,7 +1038,8 @@
     // COHERENCE
     // ----------------------------------------------------------------
     function evaluateCoherence(ibiMs) {
-      if (ibiHistory.length < 2 || isBaselineMode || isRfMode) return;
+      // Coherence requires a pacer phase to score against — bail in any unpaced mode
+      if (ibiHistory.length < 2 || isUnpacedMode()) return;
       const prev = ibiHistory[ibiHistory.length-2].ibi;
       const lm   = ibiHistory.slice(-5).reduce((s,d) => s+d.ibi, 0) / Math.min(5, ibiHistory.length);
       if (Math.abs(ibiMs - prev) / lm > 0.20) return;
@@ -1145,7 +1170,11 @@
         ui.fingerText.textContent = 'Calibrating...';
         isCalibrating = true;
         if (guideText) guideText.textContent = 'Hold still';
-        if (guideSubtext) guideSubtext.innerHTML = 'Illuminating capillaries…<br>Belly breathing, not chest.';
+        if (guideSubtext) {
+          guideSubtext.innerHTML = isFreeMode
+            ? 'Illuminating capillaries…<br>Hold steady — recording will start shortly.'
+            : 'Illuminating capillaries…<br>Belly breathing, not chest.';
+        }
         calibrationTimeout = setTimeout(() => {
           if (isCalibrating && isSessionActive) {
             ui.fingerText.textContent = 'Signal Good';
@@ -1182,22 +1211,40 @@
     // ----------------------------------------------------------------
     // SESSION MANAGEMENT
     // ----------------------------------------------------------------
-    async function startSession(baselineTrigger=false, rfTrigger=false) {
+    async function startSession(baselineTrigger=false, rfTrigger=false, freeTrigger=false) {
       if (isSessionActive) await stopSession(false);
 
-      isBaselineMode=baselineTrigger; isRfMode=rfTrigger;
+      isBaselineMode = baselineTrigger;
+      isRfMode       = rfTrigger;
+      isFreeMode     = freeTrigger;
       ibiHistory=[]; waveBuffer=[]; currentSessionIbis=[];
       coherenceScore=50; totalCoherentBeats=0; totalValidBeats=0; baselineBpm=0;
       tachDirty=false; poincareDirty=false;
-      ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
-      ui.trainingTip.textContent = isRfMode ? 'RF Assessment' : 'Target: 20 min/day';
+
+      // Coherence bar is meaningless in unpaced modes — hide it
+      if (isUnpacedMode()) {
+        ui.cohWrapper.classList.add('hidden');
+      } else {
+        ui.cohWrapper.classList.remove('hidden');
+        ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
+      }
+
+      // Status tip — give each mode an honest label
+      if (isRfMode) ui.trainingTip.textContent = 'RF Assessment';
+      else if (isFreeMode) ui.trainingTip.textContent = 'No pacer — record freely';
+      else if (isBaselineMode) ui.trainingTip.textContent = '2-min baseline';
+      else ui.trainingTip.textContent = 'Target: 20 min/day';
+
       ui.btnMain.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
 
       if (isBaselineMode) { ui.baselineOverlay.classList.add('active'); ui.modalSettings.classList.remove('show'); }
       else { ui.cameraGuide.classList.add('active'); }
 
-      if (isFocusMode && !isBaselineMode && !isRfMode) document.body.classList.add('focus-mode');
+      if (isFreeMode) ui.modalSettings.classList.remove('show');
+
+      // Focus mode applies to standard pacer sessions only — leave free recording charts visible
+      if (isFocusMode && !isUnpacedMode()) document.body.classList.add('focus-mode');
 
       await WakeLockCtrl.request();
 
@@ -1228,11 +1275,18 @@
       ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--fg-secondary)';
       ui.baselineOverlay.classList.remove('active');
       ui.cameraGuide.classList.remove('active');
+      ui.cohWrapper.classList.remove('hidden');
       ui.fingerDot.classList.remove('active'); ui.fingerText.textContent='Awaiting Signal';
       ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--fg-secondary)';
       ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
-      isRfMode=false; rfRunning=false;
-      if (showSummary && ibiHistory.length>5) generateSummary();
+      const wasFreeMode = isFreeMode;
+      isRfMode=false; rfRunning=false; isFreeMode=false;
+      // Free mode minimum: need at least 5 beats AND 10 seconds for stats to be meaningful
+      const sessionDurSec = currentSessionIbis.length > 0
+        ? (currentSessionIbis[currentSessionIbis.length-1].time - currentSessionIbis[0].time) / 1000
+        : 0;
+      const meetsThreshold = wasFreeMode ? (ibiHistory.length > 5 && sessionDurSec >= 10) : (ibiHistory.length > 5);
+      if (showSummary && meetsThreshold) generateSummary();
     }
 
     function generateSummary() {
@@ -1246,7 +1300,9 @@
       ui.sumSdnn.textContent      = Math.round(sdnn);
       ui.sumSd1.textContent       = Math.round(sd1);
       ui.sumSd2.textContent       = Math.round(sd2);
-      ui.sumCoherence.textContent = isBaselineMode ? 'N/A' : `${cohPct}%`;
+      // Coherence is meaningless without a pacer phase to score against
+      const noCoherence = isBaselineMode || isFreeMode;
+      ui.sumCoherence.textContent = noCoherence ? 'N/A' : `${cohPct}%`;
       ui.sumEndBpm.textContent    = endBpm;
       const sCtx = ui.summaryPoincare.getContext('2d');
       drawPoincare(ui.summaryPoincare, sCtx, ibis);
@@ -1384,6 +1440,7 @@
     ui.btnSettings.addEventListener('click', ()=>{ updateRfSavedBadge(); ui.modalSettings.classList.add('show'); });
     ui.btnCloseSettings.addEventListener('click', ()=>ui.modalSettings.classList.remove('show'));
     ui.btnRunBaseline.addEventListener('click', ()=>startSession(true));
+    ui.btnFreeRecord.addEventListener('click', ()=>startSession(false, false, true));
     setupModal(ui.modalSettings, document.getElementById('modal-settings-card'), ()=>ui.modalSettings.classList.remove('show'));
 
     ui.btnFindRf.addEventListener('click', ()=>{ ui.modalSettings.classList.remove('show'); buildRfStepDisplay(); resetRfModal(); ui.modalRf.classList.add('show'); });
@@ -1400,7 +1457,7 @@
       ui.valProtocol.textContent=p.name;
       ui.groupBpm.style.display=p.customBpm?'block':'none';
       // If a session is running, restart the audio cycle at the new protocol's params
-      if (isSessionActive && audioEnabled && !isBaselineMode && !isRfMode) {
+      if (isSessionActive && audioEnabled && !isUnpacedMode()) {
         const { cycleS, phases } = getActiveCycleParams();
         AudioEngine.restart(cycleS, phases);
       }
@@ -1410,7 +1467,7 @@
       targetBpm=parseFloat(e.target.value);
       ui.valBpm.textContent=`${targetBpm.toFixed(1)} breaths/min`;
       // Live-update audio if session is running
-      if (isSessionActive && audioEnabled && !isBaselineMode && !isRfMode) {
+      if (isSessionActive && audioEnabled && !isUnpacedMode()) {
         const { cycleS, phases } = getActiveCycleParams();
         AudioEngine.restart(cycleS, phases);
       }
