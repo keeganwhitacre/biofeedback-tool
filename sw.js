@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kw-biofeedback-v9';
+const CACHE_NAME = 'kw-biofeedback-v10';
 const ASSETS = [
   './index.html',
   './epat-core.js',
