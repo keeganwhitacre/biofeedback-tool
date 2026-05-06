@@ -149,6 +149,7 @@
 
     /* ── GLOBAL LAYOUT ── */
     .scroll-container { flex: 1; overflow-y: auto; padding: 0 20px 120px; }
+    .scroll-container::-webkit-scrollbar { display: none; }
     .content-centerer { max-width: 760px; margin: 0 auto; width: 100%; position: relative; }
     .header { padding: calc(var(--safe-top) + 20px) 20px 8px; flex-shrink: 0; z-index: 20; position: relative; transition: opacity 0.4s; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
@@ -161,24 +162,20 @@
     .icon-btn.active { background: var(--text-1); color: var(--bg-canvas); }
     .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 
+    /* ── CARDS (Shared Assess/Trends) ── */
+    .card { background: var(--bg-surface); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 0.5px solid var(--border); }
+    .card-label { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;}
+    .card-value { font-size: 32px; font-weight: 200; font-family: ui-monospace, monospace; color: var(--text-1); line-height: 1.2; }
+
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
     .train-content-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px 100px; width: 100%;}
     
-    /* Dimming Overlay for focus */
-    .train-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      z-index: 15; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
-    }
-    body.session-active .train-backdrop { opacity: 1; pointer-events: auto; }
-    body.session-active .header { opacity: 0.2; pointer-events: none; }
-    body.session-active .glass-nav-wrap { transform: translateY(120px); opacity: 0; }
-
     .train-focus-zone {
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       position: relative; z-index: 20; transition: transform 0.4s ease; padding: 20px 0; width: 100%;
     }
     body.session-active .train-focus-zone { transform: scale(1.02); }
+    body.session-active .glass-nav-wrap { transform: translateY(120px); opacity: 0; }
 
     /* Pacer Module */
     .pacer-container { position: relative; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
@@ -200,8 +197,6 @@
       background: var(--bg-surface); border-radius: 50%;
       opacity: 0; pointer-events: none; transition: opacity 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
-    body.session-active [data-theme="light"] .camera-guide { background: #fff; }
-    body.session-active [data-theme="dark"] .camera-guide { background: #1c1c1e; }
     .camera-guide.active { opacity: 1; pointer-events: auto; }
     
     .video-circle {
@@ -226,14 +221,10 @@
       border: 0.5px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: background 0.4s, border 0.4s;
     }
-    body.session-active .signal-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-color: rgba(255,255,255,0.1); }
-    [data-theme="dark"] body.session-active .signal-card { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.05); }
-
     .signal-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); }
     .signal-status-group { display: flex; align-items: center; gap: 6px; }
     .signal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-md); transition: background 0.3s, box-shadow 0.3s; }
     .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 8px var(--coh-high); }
-    .session-active .signal-header { color: #ebebf5; } /* Force bright in focus mode */
 
     .wave-wrapper { width: 100%; height: 50px; position: relative; }
     .wave-canvas { width: 100%; height: 100%; display: block; }
@@ -243,7 +234,6 @@
     /* Controls */
     .controls-zone { width: 100%; max-width: 340px; margin-top: auto; position: relative; z-index: 20; }
     .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 12px; font-weight: 500;}
-    body.session-active .status-row { color: #ebebf5; }
 
     .btn-main {
       width: 100%; height: 56px; border-radius: 28px; border: none;
@@ -255,7 +245,38 @@
     }
     .btn-main:active { transform: scale(0.97); }
     .btn-main.active { background: var(--bg-surface); color: var(--danger); border: 1px solid var(--border); box-shadow: none; }
-    body.session-active .btn-main.active { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); color: #ff453a; border-color: rgba(255,255,255,0.1); }
+
+    /* ── ASSESS TAB UI ── */
+    input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-md); cursor: pointer; margin-top: -10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--border); border-radius: 3px; }
+    
+    .stars-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
+    .star { width: 32px; height: 32px; color: var(--border-md); cursor: pointer; transition: color 0.2s; }
+    .star.active { color: #FFD700; fill: #FFD700; }
+    
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;}
+    .s-chip { padding: 6px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--bg-input); color: var(--text-2); border: 1px solid transparent; cursor: pointer; transition: all 0.2s;}
+    .s-chip.active { background: var(--text-1); color: var(--bg-surface); }
+
+    .btn-secondary { width: 100%; padding: 14px; border-radius: 12px; background: var(--bg-input); color: var(--text-1); border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .btn-secondary:active { opacity: 0.7; }
+    
+    /* ── TRENDS TAB UI ── */
+    .chart-panel { width: 100%; height: 160px; position: relative; margin-bottom: 16px; background: var(--bg-input); border-radius: 12px; overflow: hidden; padding: 12px;}
+    .chart-panel canvas { width: 100%; height: 100%; display: block; }
+    .insight-text { font-size: 15px; line-height: 1.5; color: var(--text-2); }
+    .insight-text strong { color: var(--text-1); }
+    
+    .history-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+    .history-row:last-child { border-bottom: none; }
+    .hist-left { display: flex; flex-direction: column; gap: 4px; }
+    .hist-date { font-size: 12px; color: var(--text-3); font-weight: 500; }
+    .hist-title { font-size: 15px; font-weight: 600; color: var(--text-1); }
+    .hist-right { display: flex; gap: 16px; text-align: right; }
+    .hist-stat { display: flex; flex-direction: column; }
+    .hist-val { font-size: 16px; font-family: ui-monospace, monospace; color: var(--text-1); font-weight: 600; }
+    .hist-lbl { font-size: 10px; text-transform: uppercase; color: var(--text-3); }
 
     /* ── SHEETS & OVERLAYS ── */
     .overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -283,31 +304,64 @@
     .sheet-btn.primary { background: var(--accent); color: #fff; }
 
     #hidden-stage { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
-    
-    /* Empty State for Placeholders */
-    .empty-tab-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text-3); text-align: center; padding: 40px;}
-    .empty-tab-state svg { width: 48px; height: 48px; stroke: var(--text-4); margin-bottom: 16px;}
   </style>
 </head>
 <body class="train-mode">
 
   <!-- EPAT HIDDEN STAGE -->
-  <div id="hidden-stage">
-    <canvas id="sampling-canvas"></canvas>
-  </div>
+  <div id="hidden-stage"><canvas id="sampling-canvas"></canvas></div>
 
-  <div class="train-backdrop" id="trainBackdrop"></div>
-
-  <!-- ASSESS TAB (Phase 2 Placeholder) -->
+  <!-- ASSESS TAB -->
   <div id="assessView" class="app-view">
     <div class="header content-centerer">
       <div class="header-top"><div class="app-title">Assess</div></div>
     </div>
     <div class="scroll-container">
-      <div class="content-centerer empty-tab-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        <h3>Assess & Log</h3>
-        <p style="font-size: 14px; margin-top: 8px;">Coming in Phase 2: Sleep logging, Active Stand Test, and Morning Readiness.</p>
+      <div class="content-centerer">
+        
+        <div class="card">
+          <div class="card-label">Morning Readiness</div>
+          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">Take a 2-minute baseline test to measure your resting HRV and nervous system recovery.</p>
+          <button class="btn-secondary" id="btn-readiness" style="background: var(--accent); color: #fff;">Start 2-Min Baseline</button>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Sleep Log</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:600;">Hours</span>
+            <span id="sleep-hours-val" style="font-family:ui-monospace, monospace; font-weight:bold;">7.5</span>
+          </div>
+          <input type="range" id="sleep-hours" min="4" max="12" step="0.5" value="7.5" style="margin-bottom:24px;">
+          
+          <div style="font-weight:600; margin-bottom:8px;">Quality</div>
+          <div class="stars-wrap" id="sleep-stars">
+            <svg class="star" data-val="1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <svg class="star" data-val="2" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <svg class="star active" data-val="3" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <svg class="star" data-val="4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <svg class="star" data-val="5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </div>
+          
+          <div style="font-weight:600; margin-bottom:8px;">Context</div>
+          <div class="chip-row" id="sleep-tags">
+            <div class="s-chip" data-tag="alcohol">Alcohol</div>
+            <div class="s-chip" data-tag="late-meal">Late Meal</div>
+            <div class="s-chip" data-tag="stress">Stressful Day</div>
+          </div>
+          
+          <button class="btn-secondary" id="btn-save-sleep">Save Sleep Log</button>
+        </div>
+
+        <div class="card">
+          <div class="card-label">BOLT Score Test</div>
+          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 12px;">Exhale normally, pinch your nose, and hold. Stop at the <strong>first definite desire</strong> to breathe.</p>
+          <div style="text-align:center; margin-bottom: 16px;">
+            <div class="card-value" id="bolt-time">00.0</div>
+            <div style="font-size:12px; color:var(--text-3); text-transform:uppercase;">Seconds</div>
+          </div>
+          <button class="btn-secondary" id="btn-bolt-toggle">Start Timer</button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -347,8 +401,8 @@
             <div class="video-circle">
               <video id="video-feed" autoplay playsinline muted></video>
             </div>
-            <div class="guide-text">Cover lens</div>
-            <div class="guide-subtext">Center fingertip over rear camera.</div>
+            <div class="guide-text" id="guide-text">Cover lens</div>
+            <div class="guide-subtext" id="guide-subtext">Center fingertip over rear camera.</div>
           </div>
         </div>
 
@@ -389,16 +443,34 @@
     </div>
   </div>
 
-  <!-- TRENDS TAB (Phase 3 Placeholder) -->
+  <!-- TRENDS TAB -->
   <div id="trendsView" class="app-view">
     <div class="header content-centerer">
       <div class="header-top"><div class="app-title">Trends</div></div>
     </div>
     <div class="scroll-container">
-      <div class="content-centerer empty-tab-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-        <h3>Trends & Insights</h3>
-        <p style="font-size: 14px; margin-top: 8px;">Coming in Phase 3: Tachograms, Poincaré plots, and historical analysis.</p>
+      <div class="content-centerer">
+        
+        <div class="card">
+          <div class="card-label">Daily Insight</div>
+          <div class="insight-text" id="daily-insight">Complete a sleep log and a morning readiness baseline to generate insights.</div>
+        </div>
+
+        <div class="card" id="charts-card" style="display:none;">
+          <div class="card-label">Latest Session Data</div>
+          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;">IBI Tachogram</div>
+          <div class="chart-panel"><canvas id="tach-canvas"></canvas></div>
+          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;">Poincaré Plot</div>
+          <div class="chart-panel"><canvas id="poincare-canvas"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">History</div>
+          <div id="history-list">
+            <div style="text-align:center; padding: 20px; color: var(--text-3); font-size: 14px;">No sessions yet.</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -433,10 +505,16 @@
   <div class="sheet" id="settingsSheet">
     <div class="handle"></div>
     <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
-      <div class="sheet-title" style="margin:0;">Training Settings</div>
+      <div class="sheet-title" style="margin:0;">Settings</div>
       <div id="closeSettingsSheet" class="icon-btn" style="width:28px; height:28px; border:none;"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
     </div>
     
+    <div class="sheet-label">Theme</div>
+    <div style="display:flex; gap:12px; margin-bottom:24px;">
+      <div class="theme-swatch" data-theme="light" style="width:60px; height:40px; border-radius:8px; background:#fff; border:2px solid var(--border); cursor:pointer;"></div>
+      <div class="theme-swatch" data-theme="dark" style="width:60px; height:40px; border-radius:8px; background:#1c1c1e; border:2px solid var(--border); cursor:pointer;"></div>
+    </div>
+
     <div class="sheet-label">Breathing Protocol</div>
     <select class="input" id="select-protocol">
       <option value="resonant">Resonant (Custom BPM)</option>
@@ -456,7 +534,7 @@
     <button class="sheet-btn primary" id="saveSettingsBtn" style="margin-top: 32px;">Done</button>
   </div>
 
-  <!-- EPAT Core library (Assume provided in environment) -->
+  <!-- EPAT Core library -->
   <script src="epat-core.js"></script>
   
   <script>
@@ -468,48 +546,31 @@
     window.addEventListener('resize', setViewportHeight);
     setViewportHeight();
 
-    // 2. TABS & ROUTING LOGIC
+    // 2. THEME LOGIC
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const t = e.currentTarget.dataset.theme;
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('kw_theme_v3', t);
+      });
+    });
+
+    // 3. TABS & ROUTING LOGIC
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        if(document.body.classList.contains('session-active')) return; // Block nav during active session
+        if(document.body.classList.contains('session-active')) return; 
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const target = e.currentTarget;
         target.classList.add('active');
         const tabName = target.getAttribute('data-tab');
         document.body.className = `${tabName}-mode`;
+        if (tabName === 'trends') {
+          requestAnimationFrame(() => { resizeCanvases(); if(latestSessionIbis.length > 0) { drawTachogram(); drawPoincare(); } });
+        }
       });
     });
 
-    // 3. UI STATE REFERENCES
-    const ui = {
-      btnMain: document.getElementById('btn-main'),
-      btnAudio: document.getElementById('btn-audio'),
-      audioWaves: document.getElementById('audio-waves'),
-      btnSettings: document.getElementById('btn-settings'),
-      settingsSheet: document.getElementById('settingsSheet'),
-      overlay: document.getElementById('overlay'),
-      closeSettingsBtn: document.getElementById('closeSettingsSheet'),
-      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
-      
-      pacerRing: document.getElementById('pacer-ring'),
-      pacerText: document.getElementById('pacer-instruction'),
-      liveBpm: document.getElementById('live-bpm'),
-      fingerDot: document.getElementById('finger-dot'),
-      fingerText: document.getElementById('finger-text'),
-      sqiText: document.getElementById('sqi-text'),
-      sessionTime: document.getElementById('session-time'),
-      cohBar: document.getElementById('coherence-bar-fill'),
-      waveCanvas: document.getElementById('wave-canvas'),
-      beatFlash: document.getElementById('beat-flash'),
-      cameraGuide: document.getElementById('camera-guide'),
-      
-      selectProtocol: document.getElementById('select-protocol'),
-      groupBpm: document.getElementById('group-bpm'),
-      sliderBpm: document.getElementById('slider-bpm'),
-      valBpm: document.getElementById('val-bpm')
-    };
-
-    // 4. PROTOCOLS
+    // 4. PROTOCOLS & AUDIO
     const PROTOCOLS = {
       resonant:  { name: "Resonant",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
       box:       { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
@@ -517,7 +578,6 @@
       coherence: { name: "Coherence",     bpm: 5.5,  phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
     };
 
-    // 5. AUDIO ENGINE (Ported cleanly)
     const AudioEngine = (function () {
       let actx = null, noiseSource = null, filterNode = null, masterGain = null;
       let connected = false, cycleTimer = null;
@@ -528,15 +588,9 @@
         const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
-
-        noiseSource = actx.createBufferSource();
-        noiseSource.buffer = buf; noiseSource.loop = true;
-
-        filterNode = actx.createBiquadFilter();
-        filterNode.type = 'lowpass'; filterNode.frequency.value = FILTER_CLOSED; filterNode.Q.value = FILTER_Q;
-
+        noiseSource = actx.createBufferSource(); noiseSource.buffer = buf; noiseSource.loop = true;
+        filterNode = actx.createBiquadFilter(); filterNode.type = 'lowpass'; filterNode.frequency.value = FILTER_CLOSED; filterNode.Q.value = FILTER_Q;
         masterGain = actx.createGain(); masterGain.gain.value = GAIN_SILENT;
-
         noiseSource.connect(filterNode); filterNode.connect(masterGain);
         noiseSource.start();
       }
@@ -544,25 +598,14 @@
       function scheduleCycle(startWhen, cycleS, phases) {
         if (!actx || !filterNode || !masterGain) return;
         const [pIn, pHIn, pOut, pHOut] = phases;
-        const t = {
-          inhaleEnd: startWhen + pIn * cycleS,
-          holdInEnd: startWhen + (pIn + pHIn) * cycleS,
-          exhaleEnd: startWhen + (pIn + pHIn + pOut) * cycleS,
-          cycleEnd:  startWhen + cycleS,
-        };
-
+        const t = { inhaleEnd: startWhen + pIn * cycleS, holdInEnd: startWhen + (pIn + pHIn) * cycleS, exhaleEnd: startWhen + (pIn + pHIn + pOut) * cycleS, cycleEnd: startWhen + cycleS };
         const f = filterNode.frequency, g = masterGain.gain;
         f.cancelAndHoldAtTime(startWhen); g.cancelAndHoldAtTime(startWhen);
-
         f.setValueAtTime(FILTER_CLOSED, startWhen); f.linearRampToValueAtTime(FILTER_OPEN, t.inhaleEnd);
         g.setValueAtTime(GAIN_SILENT, startWhen); g.linearRampToValueAtTime(GAIN_PEAK, t.inhaleEnd);
-
         if (pHIn > 0) { f.setValueAtTime(FILTER_OPEN, t.inhaleEnd); g.setValueAtTime(GAIN_PEAK, t.inhaleEnd); }
-
         f.linearRampToValueAtTime(FILTER_CLOSED, t.exhaleEnd); g.linearRampToValueAtTime(GAIN_SILENT, t.exhaleEnd);
-
         if (pHOut > 0) { f.setValueAtTime(FILTER_CLOSED, t.exhaleEnd); g.setValueAtTime(GAIN_SILENT, t.exhaleEnd); }
-
         const msUntilEnd = (t.cycleEnd - actx.currentTime) * 1000;
         cycleTimer = setTimeout(() => { if (actx && connected) scheduleCycle(t.cycleEnd, cycleS, phases); }, Math.max(0, msUntilEnd - 20));
       }
@@ -587,32 +630,55 @@
       };
     })();
 
-    // 6. STATE
-    let isSessionActive = false;
-    let audioEnabled = false;
-    let activeProtocol = 'resonant';
-    let targetBpm = 6.0;
-    let pacerRaf = null;
-    let sessionStartTime = 0;
-    let waveBuffer = [];
-    const WAVE_MAX = 120;
-    
-    let ibiHistory = [];
-    let coherenceScore = 50;
-    let currentPacerPhase = 'hold';
+    // 5. GLOBAL STATE
+    let isSessionActive = false, isBaselineMode = false, audioEnabled = false;
+    let activeProtocol = 'resonant', targetBpm = 6.0;
+    let pacerRaf = null, sessionStartTime = 0;
+    let waveBuffer = [], ibiHistory = [], latestSessionIbis = [];
+    const WAVE_MAX = 120, BASELINE_DUR_MS = 120000;
+    let coherenceScore = 50, currentPacerPhase = 'hold';
 
-    // 7. CANVAS SETUP
+    // 6. UI REFS
+    const ui = {
+      btnMain: document.getElementById('btn-main'),
+      sessionTime: document.getElementById('session-time'),
+      trainingTip: document.getElementById('training-tip'),
+      btnAudio: document.getElementById('btn-audio'),
+      audioWaves: document.getElementById('audio-waves'),
+      pacerRing: document.getElementById('pacer-ring'),
+      pacerText: document.getElementById('pacer-instruction'),
+      liveBpm: document.getElementById('live-bpm'),
+      fingerDot: document.getElementById('finger-dot'),
+      fingerText: document.getElementById('finger-text'),
+      sqiText: document.getElementById('sqi-text'),
+      cohBar: document.getElementById('coherence-bar-fill'),
+      cohWrap: document.getElementById('coherence-wrapper'),
+      waveCanvas: document.getElementById('wave-canvas'),
+      beatFlash: document.getElementById('beat-flash'),
+      cameraGuide: document.getElementById('camera-guide'),
+      guideText: document.getElementById('guide-text'),
+      guideSubtext: document.getElementById('guide-subtext'),
+      settingsSheet: document.getElementById('settingsSheet'),
+      overlay: document.getElementById('overlay')
+    };
+
+    // 7. CANVAS SCALING
     const waveCtx = ui.waveCanvas.getContext('2d');
+    const tachCanvas = document.getElementById('tach-canvas');
+    const tachCtx = tachCanvas.getContext('2d');
+    const poincareCanvas = document.getElementById('poincare-canvas');
+    const pcCtx = poincareCanvas.getContext('2d');
+
     function resizeCanvases() {
       const dpr = window.devicePixelRatio || 1;
-      const r = ui.waveCanvas.parentElement.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        ui.waveCanvas.width = r.width * dpr; ui.waveCanvas.height = r.height * dpr; waveCtx.scale(dpr, dpr);
-      }
+      [[ui.waveCanvas, waveCtx], [tachCanvas, tachCtx], [poincareCanvas, pcCtx]].forEach(([c, ctx]) => {
+        const r = c.parentElement.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) { c.width = r.width * dpr; c.height = r.height * dpr; ctx.scale(dpr, dpr); }
+      });
     }
     window.addEventListener('resize', resizeCanvases);
-    requestAnimationFrame(resizeCanvases);
 
+    // 8. CHART DRAWING
     function drawWave() {
       const W = ui.waveCanvas.width/(window.devicePixelRatio||1), H = ui.waveCanvas.height/(window.devicePixelRatio||1);
       waveCtx.clearRect(0,0,W,H);
@@ -620,11 +686,9 @@
       let mn = waveBuffer[0], mx = waveBuffer[0];
       for (const v of waveBuffer) { if(v<mn)mn=v; if(v>mx)mx=v; }
       const range = mx-mn||0.001, pad=2, xStep=W/WAVE_MAX, xOff=(WAVE_MAX-waveBuffer.length)*xStep;
-      
       waveCtx.beginPath(); 
       waveCtx.strokeStyle = document.body.classList.contains('session-active') ? 'rgba(255,255,255,0.8)' : 'var(--accent)'; 
       waveCtx.lineWidth = 2.5; waveCtx.lineJoin = 'round';
-      
       for (let i=0;i<waveBuffer.length;i++) {
         const x=xOff+i*xStep, y=pad+((mx-waveBuffer[i])/range)*(H-pad*2);
         i===0 ? waveCtx.moveTo(x,y) : waveCtx.lineTo(x,y);
@@ -632,7 +696,62 @@
       waveCtx.stroke();
     }
 
-    // 8. EPAT CALLBACKS
+    function drawTachogram() {
+      const W=tachCanvas.width/(window.devicePixelRatio||1), H=tachCanvas.height/(window.devicePixelRatio||1);
+      tachCtx.clearRect(0,0,W,H);
+      if (latestSessionIbis.length < 2) return;
+      const mean = latestSessionIbis.reduce((a,b)=>a+b,0)/latestSessionIbis.length;
+      let maxDev = 0;
+      for (const v of latestSessionIbis) { const dev = Math.abs(v - mean); if (dev > maxDev) maxDev = dev; }
+      const yRange = Math.max(50, maxDev * 1.2), yMin = mean - yRange;
+      const pad = 10, drawH = H - (pad * 2), mY = pad + (drawH / 2);
+      
+      tachCtx.beginPath(); tachCtx.strokeStyle='rgba(161,161,170,0.3)'; tachCtx.setLineDash([4,4]);
+      tachCtx.moveTo(0,mY); tachCtx.lineTo(W,mY); tachCtx.stroke(); tachCtx.setLineDash([]);
+      
+      tachCtx.beginPath(); tachCtx.strokeStyle='var(--accent)'; tachCtx.lineWidth=2; tachCtx.lineJoin='round';
+      latestSessionIbis.forEach((pt,i) => {
+        const x=(i/(latestSessionIbis.length-1))*W;
+        const y = pad + drawH - ((pt-yMin)/(yRange*2)) * drawH;
+        if (i===0) { tachCtx.moveTo(x,y); return; }
+        const prevX=((i-1)/(latestSessionIbis.length-1))*W;
+        const prevY = pad + drawH - ((latestSessionIbis[i-1]-yMin)/(yRange*2)) * drawH;
+        tachCtx.bezierCurveTo((x+prevX)/2,prevY,(x+prevX)/2,y,x,y);
+      });
+      tachCtx.stroke();
+    }
+
+    function drawPoincare() {
+      const W=poincareCanvas.width/(window.devicePixelRatio||1), H=poincareCanvas.height/(window.devicePixelRatio||1);
+      pcCtx.clearRect(0,0,W,H);
+      if (latestSessionIbis.length < 3) return;
+      const pad=12, all=[...latestSessionIbis.slice(0,-1), ...latestSessionIbis.slice(1)];
+      const minV=Math.min(...all)-20, maxV=Math.max(...all)+20;
+      const toX=v=>pad+((v-minV)/(maxV-minV))*(W-pad*2), toY=v=>H-pad-((v-minV)/(maxV-minV))*(H-pad*2);
+      
+      pcCtx.beginPath(); pcCtx.strokeStyle='rgba(161,161,170,0.3)'; pcCtx.lineWidth=1; pcCtx.setLineDash([3,3]);
+      pcCtx.moveTo(toX(minV),toY(minV)); pcCtx.lineTo(toX(maxV),toY(maxV)); pcCtx.stroke(); pcCtx.setLineDash([]);
+      
+      const n=latestSessionIbis.length-1;
+      for (let i=0;i<n;i++) {
+        pcCtx.beginPath(); pcCtx.fillStyle='var(--accent)'; pcCtx.globalAlpha = 0.2 + (i/n)*0.8;
+        pcCtx.arc(toX(latestSessionIbis[i]), toY(latestSessionIbis[i+1]), 3, 0, Math.PI*2);
+        pcCtx.fill();
+      }
+      pcCtx.globalAlpha = 1.0;
+    }
+
+    // 9. MATH
+    function computeRMSSD(ibis) {
+      let sumSq = 0, n = 0;
+      for (let i = 1; i < ibis.length; i++) {
+        const lm = (ibis[i] + ibis[i-1]) / 2, diff = ibis[i] - ibis[i-1];
+        if (Math.abs(diff) / lm < 0.20) { sumSq += diff*diff; n++; }
+      }
+      return n > 0 ? Math.sqrt(sumSq / n) : 0;
+    }
+
+    // 10. EPAT CALLBACKS
     let calibrationTimeout = null;
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
@@ -641,15 +760,19 @@
         ui.fingerText.textContent = 'Adjust Finger';
         ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent = '--';
         waveBuffer = []; drawWave();
-        if (isSessionActive) ui.cameraGuide.classList.add('active');
+        if (isSessionActive) {
+           ui.cameraGuide.classList.add('active');
+           ui.guideText.textContent = 'Cover lens';
+           ui.guideSubtext.textContent = 'Center fingertip over rear camera.';
+        }
       } else {
         ui.fingerText.textContent = 'Calibrating...';
+        if(isSessionActive) {
+          ui.guideText.textContent = 'Hold still';
+          ui.guideSubtext.innerHTML = isBaselineMode ? 'Illuminating capillaries...<br>Breathe naturally.' : 'Illuminating capillaries...<br>Follow the pacer.';
+        }
         calibrationTimeout = setTimeout(() => {
-          if (isSessionActive) {
-            ui.fingerText.textContent = 'Signal Good';
-            ui.liveBpm.classList.remove('dim');
-            ui.cameraGuide.classList.remove('active');
-          }
+          if (isSessionActive) { ui.fingerText.textContent = 'Signal Good'; ui.liveBpm.classList.remove('dim'); ui.cameraGuide.classList.remove('active'); }
         }, 3000);
       }
     }
@@ -660,10 +783,8 @@
       ui.liveBpm.textContent = Math.round(beat.averageBPM);
       ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs) });
       
-      // Simple Coherence Math
-      if (ibiHistory.length >= 2) {
-        const prev = ibiHistory[ibiHistory.length-2].ibi;
-        const d = ibiMs - prev;
+      if (!isBaselineMode && ibiHistory.length >= 2) {
+        const prev = ibiHistory[ibiHistory.length-2].ibi, d = ibiMs - prev;
         let score = 50;
         if (Math.abs(d) >= 5) {
           if (currentPacerPhase === 'inhale') score = (d < 0) ? 100 : 0;
@@ -673,9 +794,7 @@
         ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
         ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
       }
-
-      ui.beatFlash.classList.add('flash');
-      setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
+      ui.beatFlash.classList.add('flash'); setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
     }
 
     function handlePPGSample(s) { waveBuffer.push(s); if(waveBuffer.length>WAVE_MAX)waveBuffer.shift(); requestAnimationFrame(drawWave); }
@@ -685,59 +804,61 @@
       ui.sqiText.style.color = sqi > 0.003 ? 'var(--coh-high)' : 'var(--coh-med)';
     }
 
-    // 9. PACER LOOP
+    // 11. PACER LOOP
     function animatePacer() {
       if (!isSessionActive) return;
-      const now = performance.now();
-      const elapsedMs = now - sessionStartTime;
+      const elapsedMs = performance.now() - sessionStartTime;
 
-      const total = Math.floor(elapsedMs / 1000);
-      ui.sessionTime.textContent = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
-
-      const pDef = PROTOCOLS[activeProtocol];
-      const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
-      const cycleMs = (60 / currentBpm) * 1000;
-      const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
-      const [pIn, pHIn, pOut] = pDef.phases;
-      let scale = 1, color = 'var(--border-md)', shadow = '', text = '';
-
-      if (phaseProgress < pIn) {
-        const p = phaseProgress / pIn;
-        const ease = Math.sin(p * Math.PI / 2);
-        scale = 1 + ease * 0.4;
-        color = 'var(--accent-inhale)';
-        shadow = `0 0 30px rgba(0,122,255,${0.2 + ease * 0.3})`;
-        text = 'Inhale'; currentPacerPhase = 'inhale';
-      } else if (phaseProgress < pIn + pHIn) {
-        scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(0,122,255,0.5)'; text = 'Hold'; currentPacerPhase = 'hold';
-      } else if (phaseProgress < pIn + pHIn + pOut) {
-        const p = (phaseProgress - pIn - pHIn) / pOut;
-        const ease = 1 - Math.sin((1 - p) * Math.PI / 2);
-        scale = 1.4 - ease * 0.4;
-        color = 'var(--accent-exhale)';
-        shadow = `0 0 15px rgba(175,82,222,${0.5 - ease * 0.3})`;
-        text = 'Exhale'; currentPacerPhase = 'exhale';
+      if (isBaselineMode) {
+        const rem = BASELINE_DUR_MS - elapsedMs;
+        if (rem <= 0) { stopSession(); return; }
+        const s = Math.floor(rem / 1000);
+        ui.sessionTime.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        // Keep ring static for baseline
+        ui.pacerRing.style.transform = `scale(1)`; ui.pacerRing.style.borderColor = 'var(--border-md)'; ui.pacerRing.style.boxShadow = 'none';
+        ui.pacerText.textContent = 'Recording'; ui.pacerText.style.color = 'var(--accent)';
       } else {
-        scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(175,82,222,0.2)'; text = 'Hold'; currentPacerPhase = 'hold';
+        const total = Math.floor(elapsedMs / 1000);
+        ui.sessionTime.textContent = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
+        
+        const pDef = PROTOCOLS[activeProtocol];
+        const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
+        const cycleMs = (60 / currentBpm) * 1000;
+        const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
+        const [pIn, pHIn, pOut] = pDef.phases;
+        let scale = 1, color = 'var(--border-md)', shadow = '', text = '';
+
+        if (phaseProgress < pIn) {
+          const ease = Math.sin((phaseProgress / pIn) * Math.PI / 2);
+          scale = 1 + ease * 0.4; color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(0,122,255,${0.2 + ease * 0.3})`;
+          text = 'Inhale'; currentPacerPhase = 'inhale';
+        } else if (phaseProgress < pIn + pHIn) {
+          scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(0,122,255,0.5)'; text = 'Hold'; currentPacerPhase = 'hold';
+        } else if (phaseProgress < pIn + pHIn + pOut) {
+          const ease = 1 - Math.sin((1 - (phaseProgress - pIn - pHIn) / pOut) * Math.PI / 2);
+          scale = 1.4 - ease * 0.4; color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(175,82,222,${0.5 - ease * 0.3})`;
+          text = 'Exhale'; currentPacerPhase = 'exhale';
+        } else {
+          scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(175,82,222,0.2)'; text = 'Hold'; currentPacerPhase = 'hold';
+        }
+        ui.pacerRing.style.transform = `scale(${scale})`; ui.pacerRing.style.borderColor = color; ui.pacerRing.style.boxShadow = shadow;
+        if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
       }
-
-      ui.pacerRing.style.transform = `scale(${scale})`;
-      ui.pacerRing.style.borderColor = color;
-      ui.pacerRing.style.boxShadow = shadow;
-      if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
-
       pacerRaf = requestAnimationFrame(animatePacer);
     }
 
-    // 10. SESSION CONTROL
-    async function startSession() {
+    // 12. SESSION CONTROL
+    async function startSession(baseline = false) {
       if (isSessionActive) { stopSession(); return; }
       
-      ibiHistory=[]; waveBuffer=[]; coherenceScore=50;
+      isBaselineMode = baseline;
+      ibiHistory=[]; waveBuffer=[]; coherenceScore=50; latestSessionIbis=[];
       ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
+      ui.cohWrap.style.opacity = isBaselineMode ? '0' : '1';
+      ui.trainingTip.textContent = isBaselineMode ? '2-Min Baseline' : 'Target: 20 min/day';
+      
       ui.cameraGuide.classList.add('active');
       document.body.classList.add('session-active');
-      
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
 
@@ -749,27 +870,24 @@
             onBeatCb: handleBeat, onFingerChangeCb: handleFingerChange, onPPGSampleCb: handlePPGSample, onSqiUpdateCb: handleSQI
           });
         } catch(err) { console.error(err); stopSession(); alert("Camera permission required."); return; }
-      } else {
-        console.warn("ePAT Core not found. UI running in dummy mode.");
-      }
+      } else { console.warn("ePAT Core not found. UI running in dummy mode."); }
 
       isSessionActive=true; sessionStartTime=performance.now();
-      if(audioEnabled) {
-         AudioEngine.init();
-         const pDef = PROTOCOLS[activeProtocol];
+      if(audioEnabled && !isBaselineMode) {
+         AudioEngine.init(); const pDef = PROTOCOLS[activeProtocol];
          AudioEngine.connect(60 / (pDef.customBpm ? targetBpm : pDef.bpm), pDef.phases);
       }
       pacerRaf=requestAnimationFrame(animatePacer);
     }
 
     async function stopSession() {
-      isSessionActive=false; cancelAnimationFrame(pacerRaf);
-      AudioEngine.stop();
+      isSessionActive=false; cancelAnimationFrame(pacerRaf); AudioEngine.stop();
       if (typeof window.ePATCore !== 'undefined') { await window.ePATCore.BeatDetector.stop(); window.ePATCore.WakeLockCtrl.release(); }
       
       document.body.classList.remove('session-active');
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training`;
       ui.btnMain.classList.remove('active');
+      ui.cohWrap.style.opacity = '1';
       
       ui.pacerRing.style.transform='scale(1)'; ui.pacerRing.style.borderColor='var(--border-md)'; ui.pacerRing.style.boxShadow='none';
       ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--text-3)';
@@ -778,40 +896,137 @@
       ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--text-3)';
       ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
       
-      // Clear waveform cleanly
+      if (ibiHistory.length > 5) {
+        latestSessionIbis = ibiHistory.map(d=>d.ibi);
+        const rmssd = computeRMSSD(latestSessionIbis);
+        
+        // Save to History
+        const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+        history.unshift({
+          date: new Date().toISOString(), protocol: isBaselineMode ? 'Morning Baseline' : PROTOCOLS[activeProtocol].name,
+          rmssd: Math.round(rmssd), bpm: Math.round(ibiHistory[ibiHistory.length-1].bpm)
+        });
+        localStorage.setItem('kw_history', JSON.stringify(history));
+        
+        document.getElementById('charts-card').style.display = 'block';
+        renderHistory();
+        generateInsights();
+      }
+      
       waveBuffer=[]; drawWave();
     }
 
-    // 11. EVENT LISTENERS
-    ui.btnMain.addEventListener('click', startSession);
-    
-    ui.btnAudio.addEventListener('click', () => {
-      audioEnabled = !audioEnabled;
-      ui.btnAudio.classList.toggle('active', audioEnabled);
-      ui.audioWaves.style.display = audioEnabled ? 'block' : 'none';
-      if (!audioEnabled) AudioEngine.disconnect();
+    // 13. ASSESS TAB LOGIC
+    document.getElementById('btn-readiness').addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-tab="train"]').classList.add('active');
+      document.body.className = 'train-mode';
+      startSession(true);
     });
 
-    // Settings Sheet Logic
+    // Sleep
+    const sleepHours = document.getElementById('sleep-hours'), sleepHoursVal = document.getElementById('sleep-hours-val');
+    sleepHours.addEventListener('input', e => sleepHoursVal.textContent = e.target.value);
+    
+    let activeStars = 3;
+    document.querySelectorAll('.star').forEach(star => {
+      star.addEventListener('click', (e) => {
+        activeStars = parseInt(e.currentTarget.dataset.val);
+        document.querySelectorAll('.star').forEach(s => {
+          if (parseInt(s.dataset.val) <= activeStars) { s.classList.add('active'); s.style.color='#FFD700'; s.style.fill='#FFD700'; }
+          else { s.classList.remove('active'); s.style.color='var(--border-md)'; s.style.fill='none'; }
+        });
+      });
+    });
+
+    const sleepTags = new Set();
+    document.querySelectorAll('#sleep-tags .s-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        const t = e.currentTarget; t.classList.toggle('active');
+        if(t.classList.contains('active')) sleepTags.add(t.dataset.tag); else sleepTags.delete(t.dataset.tag);
+      });
+    });
+
+    document.getElementById('btn-save-sleep').addEventListener('click', () => {
+      const logs = JSON.parse(localStorage.getItem('kw_sleep') || '[]');
+      logs.unshift({ date: new Date().toISOString(), hours: sleepHours.value, quality: activeStars, tags: Array.from(sleepTags) });
+      localStorage.setItem('kw_sleep', JSON.stringify(logs));
+      generateInsights();
+      const btn = document.getElementById('btn-save-sleep');
+      btn.textContent = 'Saved!'; setTimeout(()=>btn.textContent='Save Sleep Log', 2000);
+    });
+
+    // BOLT Timer
+    let boltInterval = null, boltStartTime = 0;
+    const btnBolt = document.getElementById('btn-bolt-toggle'), boltTime = document.getElementById('bolt-time');
+    btnBolt.addEventListener('click', () => {
+      if (boltInterval) {
+        clearInterval(boltInterval); boltInterval = null; btnBolt.textContent = 'Start Timer'; btnBolt.style.background='var(--bg-input)'; btnBolt.style.color='var(--text-1)';
+      } else {
+        boltStartTime = Date.now();
+        boltInterval = setInterval(() => { boltTime.textContent = ((Date.now() - boltStartTime)/1000).toFixed(1); }, 100);
+        btnBolt.textContent = 'Stop'; btnBolt.style.background='rgba(255,59,48,0.1)'; btnBolt.style.color='var(--danger)';
+      }
+    });
+
+    // 14. TRENDS & INSIGHTS
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const list = document.getElementById('history-list');
+      if (!history.length) { list.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-3); font-size: 14px;">No sessions yet.</div>'; return; }
+      list.innerHTML = history.slice(0, 15).map(s => `
+        <div class="history-row">
+          <div class="hist-left">
+            <div class="hist-date">${new Date(s.date).toLocaleDateString()}</div>
+            <div class="hist-title">${s.protocol}</div>
+          </div>
+          <div class="hist-right">
+            <div class="hist-stat"><span class="hist-val">${s.rmssd}</span><span class="hist-lbl">RMSSD</span></div>
+            <div class="hist-stat"><span class="hist-val">${s.bpm}</span><span class="hist-lbl">BPM</span></div>
+          </div>
+        </div>`).join('');
+    }
+
+    function generateInsights() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]');
+      const insightEl = document.getElementById('daily-insight');
+      
+      if (!history.length || !sleep.length) return;
+      
+      const lastSleep = sleep[0];
+      const today = new Date().toDateString();
+      const todayBaselines = history.filter(h => h.protocol === 'Morning Baseline' && new Date(h.date).toDateString() === today);
+      
+      if (todayBaselines.length > 0) {
+        const latestRMSSD = todayBaselines[0].rmssd;
+        if (lastSleep.quality <= 2 && latestRMSSD > 40) insightEl.innerHTML = `You reported poor sleep (Quality: ${lastSleep.quality}/5), but your morning HRV (<strong>${latestRMSSD}</strong>) shows your nervous system is actually quite resilient today. You are cleared for physical exertion.`;
+        else if (lastSleep.quality >= 4 && latestRMSSD < 30) insightEl.innerHTML = `You slept well, but your HRV is suppressed today (<strong>${latestRMSSD}</strong>). This suggests underlying stress. Consider a 5-minute Relaxing breathwork session.`;
+        else insightEl.innerHTML = `Sleep quality (${lastSleep.quality}/5) matches your nervous system readiness (HRV: <strong>${latestRMSSD}</strong>). Keep up the consistency.`;
+      } else {
+        insightEl.innerHTML = `Log a <strong>Morning Readiness</strong> baseline to compare against your last sleep log.`;
+      }
+    }
+
+    // 15. SETTINGS
+    ui.btnMain.addEventListener('click', () => startSession(false));
     ui.btnSettings.addEventListener('click', () => { ui.settingsSheet.classList.add('open'); ui.overlay.classList.add('open'); });
     const closeSettings = () => { ui.settingsSheet.classList.remove('open'); ui.overlay.classList.remove('open'); };
-    ui.closeSettingsBtn.addEventListener('click', closeSettings);
-    ui.saveSettingsBtn.addEventListener('click', closeSettings);
+    document.getElementById('closeSettingsSheet').addEventListener('click', closeSettings);
+    document.getElementById('saveSettingsBtn').addEventListener('click', closeSettings);
     ui.overlay.addEventListener('click', closeSettings);
-
-    ui.selectProtocol.addEventListener('change', e => {
-      activeProtocol = e.target.value;
-      ui.groupBpm.style.display = PROTOCOLS[activeProtocol].customBpm ? 'block' : 'none';
+    
+    document.getElementById('select-protocol').addEventListener('change', e => {
+      activeProtocol = e.target.value; document.getElementById('group-bpm').style.display = PROTOCOLS[activeProtocol].customBpm ? 'flex' : 'none';
     });
-
-    ui.sliderBpm.addEventListener('input', e => {
-      targetBpm = parseFloat(e.target.value);
-      ui.valBpm.textContent = `${targetBpm.toFixed(1)} bpm`;
+    document.getElementById('slider-bpm').addEventListener('input', e => {
+      targetBpm = parseFloat(e.target.value); document.getElementById('val-bpm').textContent = `${targetBpm.toFixed(1)} bpm`;
     });
 
     // Init defaults
     let savedRf = parseFloat(localStorage.getItem('kw_rf') || '6.0');
-    targetBpm = savedRf; ui.sliderBpm.value = savedRf; ui.valBpm.textContent = `${savedRf.toFixed(1)} bpm`;
+    targetBpm = savedRf; document.getElementById('slider-bpm').value = savedRf; document.getElementById('val-bpm').textContent = `${savedRf.toFixed(1)} bpm`;
+    renderHistory(); generateInsights(); resizeCanvases();
   </script>
 </body>
 </html>
