@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>KW Biofeedback</title>
   
   <script>
@@ -28,7 +30,7 @@
       --bg-canvas: #f2f2f7; 
       --bg-surface: #ffffff; 
       --bg-overlay: rgba(0,0,0,0.4);
-      --bg-input: rgba(0,0,0,0.06);
+      --bg-input: rgba(0,0,0,0.04);
       
       /* Text */
       --text-1: #000000;
@@ -88,12 +90,12 @@
       overflow: hidden; overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none;
     }
+    body:has(.overlay.open) { overflow: hidden; }
 
     /* ── ROUTING LOGIC ── */
     .app-view { display: none; flex: 1; flex-direction: column; overflow: hidden; position: relative; z-index: 10; }
     
     #trainView { display: flex; } 
-
     body.assess-mode #trainView { display: none !important; }
     body.assess-mode #trendsView { display: none !important; }
     body.assess-mode #assessView { display: flex !important; }
@@ -109,7 +111,8 @@
     /* ── GLASS NAV ── */
     .glass-nav-wrap {
       position: fixed; z-index: 90; pointer-events: none;
-      bottom: 23px; left: 0; width: 100%; display: flex; justify-content: center;
+      bottom: 23px; left: 0; width: 100%;
+      display: flex; justify-content: center;
       transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
     }
     .glass-panel {
@@ -146,7 +149,7 @@
 
     /* ── GLOBAL LAYOUT ── */
     .scroll-container { flex: 1; overflow-y: auto; padding: 0 20px 120px; }
-    .content-centerer { max-width: 760px; margin: 0 auto; width: 100%; position: relative; height: 100%; display: flex; flex-direction: column;}
+    .content-centerer { max-width: 760px; margin: 0 auto; width: 100%; position: relative; }
     .header { padding: calc(var(--safe-top) + 20px) 20px 8px; flex-shrink: 0; z-index: 20; position: relative; transition: opacity 0.4s; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
     .app-title { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; color: var(--text-1); line-height: 1.1; }
@@ -159,6 +162,9 @@
     .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
+    .train-content-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px 100px; width: 100%;}
+    
+    /* Dimming Overlay for focus */
     .train-backdrop {
       position: fixed; inset: 0; background: rgba(0,0,0,0.65);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -170,10 +176,11 @@
 
     .train-focus-zone {
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      position: relative; z-index: 20; transition: transform 0.4s ease; padding: 20px 0;
+      position: relative; z-index: 20; transition: transform 0.4s ease; padding: 20px 0; width: 100%;
     }
     body.session-active .train-focus-zone { transform: scale(1.02); }
 
+    /* Pacer Module */
     .pacer-container { position: relative; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
     .pacer-ring {
       position: absolute; width: 180px; height: 180px; border-radius: 50%;
@@ -185,6 +192,7 @@
     .live-bpm.dim { opacity: 0.2; }
     .pacer-instruction { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--text-3); margin-top: 8px; transition: color 1s ease; }
 
+    /* Camera Guide inside Pacer */
     @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.3); } 70% { box-shadow: 0 0 0 20px rgba(0,122,255,0); } 100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); } }
     .camera-guide {
       position: absolute; inset: 0; z-index: 15;
@@ -196,17 +204,23 @@
     body.session-active [data-theme="dark"] .camera-guide { background: #1c1c1e; }
     .camera-guide.active { opacity: 1; pointer-events: auto; }
     
-    .video-circle { width: 86px; height: 86px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent); margin-bottom: 12px; animation: pulse-border 2s infinite; background: #000; }
+    .video-circle {
+      width: 86px; height: 86px; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--accent); margin-bottom: 12px;
+      animation: pulse-border 2s infinite; background: #000;
+    }
     .video-circle video { width: 100%; height: 100%; object-fit: cover; display: block !important; opacity: 1 !important; }
     .guide-text { font-size: 14px; color: var(--text-1); font-weight: 700; text-align: center; margin-bottom: 4px; }
     .guide-subtext { font-size: 11px; color: var(--text-3); text-align: center; max-width: 140px; line-height: 1.4; }
 
+    /* Coherence Bar */
     .coherence-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 160px; margin-bottom: 24px; transition: opacity 0.3s; }
     .coherence-wrapper.hidden { opacity: 0; pointer-events: none; }
     .coherence-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); font-weight: 700; }
     .coherence-bar-bg { width: 100%; height: 6px; border-radius: 3px; background: var(--bg-input); overflow: hidden; }
     .coherence-bar-fill { height: 100%; width: 50%; border-radius: 3px; background: var(--coh-med); transition: width 0.3s ease, background-color 0.5s ease; }
 
+    /* Signal Card */
     .signal-card {
       width: 100%; max-width: 340px; background: var(--bg-surface); border-radius: 20px;
       border: 0.5px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 12px;
@@ -219,14 +233,15 @@
     .signal-status-group { display: flex; align-items: center; gap: 6px; }
     .signal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-md); transition: background 0.3s, box-shadow 0.3s; }
     .signal-dot.active { background: var(--coh-high); box-shadow: 0 0 8px var(--coh-high); }
-    .session-active .signal-header { color: #ebebf5; }
+    .session-active .signal-header { color: #ebebf5; } /* Force bright in focus mode */
 
     .wave-wrapper { width: 100%; height: 50px; position: relative; }
     .wave-canvas { width: 100%; height: 100%; display: block; }
     .beat-flash { position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--accent); opacity: 0; transition: opacity 0.1s ease-out; }
     .beat-flash.flash { opacity: 1; }
 
-    .controls-zone { width: 100%; max-width: 340px; margin-top: auto; padding-bottom: 24px; position: relative; z-index: 20; }
+    /* Controls */
+    .controls-zone { width: 100%; max-width: 340px; margin-top: auto; position: relative; z-index: 20; }
     .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 12px; font-weight: 500;}
     body.session-active .status-row { color: #ebebf5; }
 
@@ -235,71 +250,12 @@
       background: var(--text-1); color: var(--bg-canvas);
       font-size: 16px; font-weight: 700; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: transform 0.15s, opacity 0.2s, background 0.3s; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      transition: transform 0.15s, opacity 0.2s, background 0.3s;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
     .btn-main:active { transform: scale(0.97); }
     .btn-main.active { background: var(--bg-surface); color: var(--danger); border: 1px solid var(--border); box-shadow: none; }
     body.session-active .btn-main.active { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); color: #ff453a; border-color: rgba(255,255,255,0.1); }
-
-    /* ── ASSESS TAB (CARDS & UI) ── */
-    .assess-card {
-      background: var(--bg-surface); border-radius: 20px; padding: 20px; margin-bottom: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.03); border: 0.5px solid var(--border);
-    }
-    .card-label { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
-    
-    /* Sleep Slider */
-    .sleep-val-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-    .sleep-num { font-size: 32px; font-weight: 800; font-family: ui-monospace, monospace; letter-spacing: -1px; color: var(--text-1); }
-    input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 12px 0 24px; }
-    input[type=range]:focus { outline: none; }
-    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: var(--bg-input); border-radius: 4px; }
-    input[type=range]::-webkit-slider-thumb {
-      height: 28px; width: 28px; border-radius: 50%; background: var(--bg-surface); border: 0.5px solid var(--border-md);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; -webkit-appearance: none; margin-top: -10px;
-    }
-
-    /* Star Rating */
-    .star-row { display: flex; gap: 8px; margin-bottom: 24px; }
-    .star-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--border-md); transition: color 0.2s; }
-    .star-btn svg { width: 32px; height: 32px; fill: currentColor; }
-    .star-btn.active { color: var(--coh-med); }
-
-    /* Context Chips */
-    .ctx-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-    .ctx-chip {
-      padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 600;
-      background: var(--bg-canvas); color: var(--text-2); border: 0.5px solid var(--border); cursor: pointer; transition: all 0.15s;
-    }
-    .ctx-chip.active { background: var(--text-1); color: var(--bg-canvas); border-color: transparent; }
-
-    .btn-secondary {
-      width: 100%; padding: 14px; border-radius: 14px; border: 0.5px solid var(--border-md);
-      background: var(--bg-canvas); color: var(--text-1); font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s;
-    }
-    .btn-secondary:active { background: var(--border); }
-
-    /* BOLT Timer */
-    .bolt-timer { font-size: 56px; font-weight: 200; font-family: ui-monospace, monospace; letter-spacing: -2px; color: var(--text-1); text-align: center; margin: 16px 0 24px; line-height: 1;}
-    .bolt-timer span { font-size: 24px; color: var(--text-3); font-weight: 500; }
-
-    /* Active Stand Overlay */
-    #standModal {
-      position: fixed; inset: 0; background: var(--bg-surface); z-index: 200;
-      display: flex; flex-direction: column; transform: translateY(100%);
-      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
-    }
-    #standModal.open { transform: translateY(0); }
-    .stand-header { padding: calc(var(--safe-top) + 20px) 20px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid var(--border); }
-    .stand-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;}
-    .stand-phase-text { font-size: 24px; font-weight: 700; color: var(--text-1); margin-top: 24px; transition: color 0.3s; }
-    .stand-time { font-size: 48px; font-weight: 200; font-family: ui-monospace, monospace; letter-spacing: -2px; margin: 8px 0 32px; }
-    .stand-progress-bg { width: 100%; max-width: 280px; height: 8px; border-radius: 4px; background: var(--bg-input); overflow: hidden; margin-bottom: 32px; }
-    .stand-progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s linear, background-color 0.3s; }
-    .stand-stats { display: flex; gap: 24px; margin-bottom: 32px; opacity: 0; transition: opacity 0.5s; }
-    .s-stat { display: flex; flex-direction: column; align-items: center; }
-    .s-val { font-size: 28px; font-family: ui-monospace, monospace; font-weight: 600; color: var(--text-1); }
-    .s-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); font-weight: 600; }
 
     /* ── SHEETS & OVERLAYS ── */
     .overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -318,10 +274,19 @@
     .handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border-md); margin: 0 auto 24px; }
     .sheet-title { font-size: 20px; font-weight: 700; color: var(--text-1); margin-bottom: 20px; }
     .sheet-label { font-size: 13px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin: 20px 0 8px; }
+    
+    .input { 
+      display: block; width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 12px; 
+      border: 0.5px solid var(--border); background: var(--bg-canvas); font-size: 16px; color: var(--text-1); outline: none; margin-bottom: 12px; 
+    }
     .sheet-btn { width: 100%; box-sizing: border-box; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 12px; background: var(--bg-canvas); color: var(--text-1); }
     .sheet-btn.primary { background: var(--accent); color: #fff; }
 
     #hidden-stage { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
+    
+    /* Empty State for Placeholders */
+    .empty-tab-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text-3); text-align: center; padding: 40px;}
+    .empty-tab-state svg { width: 48px; height: 48px; stroke: var(--text-4); margin-bottom: 16px;}
   </style>
 </head>
 <body class="train-mode">
@@ -329,103 +294,23 @@
   <!-- EPAT HIDDEN STAGE -->
   <div id="hidden-stage">
     <canvas id="sampling-canvas"></canvas>
-    <canvas id="stand-sampling-canvas"></canvas> <!-- Dedicated for Stand Test to avoid DOM moving issues -->
   </div>
 
   <div class="train-backdrop" id="trainBackdrop"></div>
 
-  <!-- ASSESS TAB (Phase 2) -->
+  <!-- ASSESS TAB (Phase 2 Placeholder) -->
   <div id="assessView" class="app-view">
     <div class="header content-centerer">
       <div class="header-top"><div class="app-title">Assess</div></div>
     </div>
     <div class="scroll-container">
-      <div class="content-centerer" style="padding-bottom: 40px;">
-        
-        <!-- Morning Readiness / Sleep -->
-        <div class="assess-card">
-          <div class="card-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            Morning Readiness
-          </div>
-          
-          <div class="sleep-val-row">
-            <span style="font-size: 15px; font-weight: 600;">Sleep Duration</span>
-            <span class="sleep-num" id="sleep-hrs-text">7.5<span style="font-size: 16px; font-weight: 600; color:var(--text-3);">hrs</span></span>
-          </div>
-          <input type="range" id="sleep-slider" min="3" max="12" step="0.5" value="7.5">
-
-          <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">Sleep Quality</div>
-          <div class="star-row" id="star-row">
-            <button class="star-btn active" data-val="1"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
-            <button class="star-btn active" data-val="2"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
-            <button class="star-btn active" data-val="3"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
-            <button class="star-btn" data-val="4"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
-            <button class="star-btn" data-val="5"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
-          </div>
-
-          <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">Context (Yesterday)</div>
-          <div class="ctx-chip-row" id="ctx-chips">
-            <div class="ctx-chip" data-ctx="alcohol">🍷 Alcohol</div>
-            <div class="ctx-chip" data-ctx="late-meal">🍕 Late Meal</div>
-            <div class="ctx-chip" data-ctx="stress">🧠 High Stress</div>
-            <div class="ctx-chip" data-ctx="workout">🏋️ Hard Workout</div>
-          </div>
-
-          <button class="btn-secondary" id="btn-log-sleep" style="color:var(--bg-canvas); background:var(--text-1); border:none;">Log Readiness</button>
-        </div>
-
-        <!-- Active Stand Test -->
-        <div class="assess-card">
-          <div class="card-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            CNS Fatigue Test
-          </div>
-          <p style="font-size: 14px; color: var(--text-3); margin-bottom: 16px;">The Orthostatic test measures your nervous system's recovery. You will lie flat for 2 mins, then stand for 2 mins.</p>
-          <button class="btn-secondary" id="btn-start-stand">Start Test (4 Mins)</button>
-        </div>
-
-        <!-- BOLT Score -->
-        <div class="assess-card">
-          <div class="card-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            BOLT Score
-          </div>
-          <p style="font-size: 14px; color: var(--text-3); line-height: 1.5;">Normal breath in, normal breath out. Pinch nose and start timer. Stop at the <b>first definite desire</b> to breathe.</p>
-          <div class="bolt-timer" id="bolt-display">00.0<span>s</span></div>
-          <button class="btn-secondary" id="btn-bolt-toggle" style="background:var(--accent-inhale); color:#fff; border:none;">Start Timer</button>
-        </div>
-
+      <div class="content-centerer empty-tab-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <h3>Assess & Log</h3>
+        <p style="font-size: 14px; margin-top: 8px;">Coming in Phase 2: Sleep logging, Active Stand Test, and Morning Readiness.</p>
       </div>
     </div>
   </div>
-
-  <!-- STAND TEST MODAL -->
-  <div id="standModal">
-    <div class="stand-header">
-      <div style="font-weight: 700; font-size: 18px;">Active Stand Test</div>
-      <button class="icon-btn" id="btn-cancel-stand" style="border:none;"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="stand-body">
-      
-      <div class="video-circle" style="width:100px; height:100px; border-color:var(--accent);">
-        <video id="stand-video-feed" autoplay playsinline muted></video>
-      </div>
-      <div style="font-size: 13px; font-weight:600; color:var(--text-3); margin-top:8px;" id="stand-finger-status">Awaiting Signal</div>
-
-      <div class="stand-phase-text" id="stand-phase-text">Lie down flat.</div>
-      <div class="stand-time" id="stand-timer">02:00</div>
-      
-      <div class="stand-progress-bg"><div class="stand-progress-fill" id="stand-progress"></div></div>
-
-      <div class="stand-stats" id="stand-results">
-        <div class="s-stat"><span class="s-val" id="stand-res-rmssd">--</span><span class="s-lbl">Rest RMSSD</span></div>
-        <div class="s-stat"><span class="s-val" id="stand-std-rmssd">--</span><span class="s-lbl">Stand RMSSD</span></div>
-      </div>
-      <div style="font-size: 14px; font-weight:500; color:var(--text-2); display:none; max-width: 280px; margin-top: 16px;" id="stand-insight"></div>
-    </div>
-  </div>
-
 
   <!-- TRAIN TAB (Active) -->
   <div id="trainView" class="app-view">
@@ -446,7 +331,7 @@
       </div>
     </div>
 
-    <div class="content-centerer" style="align-items: center; justify-content: flex-start; padding: 0 20px;">
+    <div class="content-centerer train-content-wrapper">
       
       <div class="train-focus-zone">
         <!-- Center Pacer -->
@@ -457,6 +342,7 @@
             <div class="pacer-instruction" id="pacer-instruction">Ready</div>
           </div>
           
+          <!-- Camera Feed Guide (Overlay within Pacer) -->
           <div class="camera-guide" id="camera-guide">
             <div class="video-circle">
               <video id="video-feed" autoplay playsinline muted></video>
@@ -466,6 +352,7 @@
           </div>
         </div>
 
+        <!-- Coherence Bar -->
         <div class="coherence-wrapper" id="coherence-wrapper">
           <div class="coherence-label">Coherence</div>
           <div class="coherence-bar-bg"><div class="coherence-bar-fill" id="coherence-bar-fill"></div></div>
@@ -487,6 +374,7 @@
         </div>
       </div>
 
+      <!-- Controls -->
       <div class="controls-zone">
         <div class="status-row">
           <span id="session-time">00:00</span>
@@ -583,15 +471,16 @@
     // 2. TABS & ROUTING LOGIC
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        if(document.body.classList.contains('session-active')) return;
+        if(document.body.classList.contains('session-active')) return; // Block nav during active session
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const target = e.currentTarget;
         target.classList.add('active');
-        document.body.className = `${target.getAttribute('data-tab')}-mode`;
+        const tabName = target.getAttribute('data-tab');
+        document.body.className = `${tabName}-mode`;
       });
     });
 
-    // 3. UI STATE REFERENCES (Train Tab)
+    // 3. UI STATE REFERENCES
     const ui = {
       btnMain: document.getElementById('btn-main'),
       btnAudio: document.getElementById('btn-audio'),
@@ -620,7 +509,15 @@
       valBpm: document.getElementById('val-bpm')
     };
 
-    // 4. AUDIO ENGINE (Tone Generator added for Tests)
+    // 4. PROTOCOLS
+    const PROTOCOLS = {
+      resonant:  { name: "Resonant",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
+      box:       { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
+      relax:     { name: "4-7-8 Relax",   bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
+      coherence: { name: "Coherence",     bpm: 5.5,  phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
+    };
+
+    // 5. AUDIO ENGINE (Ported cleanly)
     const AudioEngine = (function () {
       let actx = null, noiseSource = null, filterNode = null, masterGain = null;
       let connected = false, cycleTimer = null;
@@ -653,13 +550,19 @@
           exhaleEnd: startWhen + (pIn + pHIn + pOut) * cycleS,
           cycleEnd:  startWhen + cycleS,
         };
+
         const f = filterNode.frequency, g = masterGain.gain;
         f.cancelAndHoldAtTime(startWhen); g.cancelAndHoldAtTime(startWhen);
+
         f.setValueAtTime(FILTER_CLOSED, startWhen); f.linearRampToValueAtTime(FILTER_OPEN, t.inhaleEnd);
         g.setValueAtTime(GAIN_SILENT, startWhen); g.linearRampToValueAtTime(GAIN_PEAK, t.inhaleEnd);
+
         if (pHIn > 0) { f.setValueAtTime(FILTER_OPEN, t.inhaleEnd); g.setValueAtTime(GAIN_PEAK, t.inhaleEnd); }
+
         f.linearRampToValueAtTime(FILTER_CLOSED, t.exhaleEnd); g.linearRampToValueAtTime(GAIN_SILENT, t.exhaleEnd);
+
         if (pHOut > 0) { f.setValueAtTime(FILTER_CLOSED, t.exhaleEnd); g.setValueAtTime(GAIN_SILENT, t.exhaleEnd); }
+
         const msUntilEnd = (t.cycleEnd - actx.currentTime) * 1000;
         cycleTimer = setTimeout(() => { if (actx && connected) scheduleCycle(t.cycleEnd, cycleS, phases); }, Math.max(0, msUntilEnd - 20));
       }
@@ -667,254 +570,37 @@
       return {
         init() { if (!actx) { actx = new (window.AudioContext || window.webkitAudioContext)(); buildGraph(); actx.suspend(); } },
         connect(cycleS, phases) {
-          if (!actx) this.init(); if (actx.state === 'suspended') actx.resume();
+          if (!actx) this.init();
+          if (actx.state === 'suspended') actx.resume();
           if (!connected) { masterGain.connect(actx.destination); connected = true; }
           clearTimeout(cycleTimer); scheduleCycle(actx.currentTime + 0.05, cycleS, phases);
         },
         disconnect() {
           clearTimeout(cycleTimer);
           if (connected && masterGain) {
-            masterGain.gain.cancelAndHoldAtTime(actx.currentTime); masterGain.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
+            masterGain.gain.cancelAndHoldAtTime(actx.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
             setTimeout(() => { try { masterGain.disconnect(); } catch(e){} connected = false; }, 200);
           }
         },
-        stop() { clearTimeout(cycleTimer); this.disconnect(); setTimeout(() => { if (actx) actx.suspend(); }, 300); },
-        beep(freq=440, type='sine', dur=0.5) {
-          if (!actx) this.init(); if (actx.state === 'suspended') actx.resume();
-          const osc = actx.createOscillator(), g = actx.createGain();
-          osc.type = type; osc.frequency.value = freq;
-          osc.connect(g); g.connect(actx.destination);
-          osc.start(); g.gain.exponentialRampToValueAtTime(0.00001, actx.currentTime + dur);
-          setTimeout(() => osc.stop(), dur * 1000);
-        }
+        stop() { clearTimeout(cycleTimer); this.disconnect(); setTimeout(() => { if (actx) actx.suspend(); }, 300); }
       };
     })();
 
-    // 5. HRV MATH HELPERS
-    function computeRMSSD(ibis) {
-      let sumSq = 0, n = 0;
-      for (let i = 1; i < ibis.length; i++) {
-        const diff = ibis[i] - ibis[i-1], lm = (ibis[i] + ibis[i-1]) / 2;
-        if (Math.abs(diff) / lm < 0.20) { sumSq += diff*diff; n++; }
-      }
-      return n > 0 ? Math.sqrt(sumSq / n) : 0;
-    }
-
-    // ══════════════════════════════════════════════════════════════════
-    // PHASE 2: ASSESS TAB LOGIC
-    // ══════════════════════════════════════════════════════════════════
-
-    // --- SLEEP LOGGING ---
-    const slpSlider = document.getElementById('sleep-slider');
-    const slpText = document.getElementById('sleep-hrs-text');
-    const stars = document.querySelectorAll('.star-btn');
-    const chips = document.querySelectorAll('.ctx-chip');
-    let sleepQuality = 3;
-
-    slpSlider.addEventListener('input', e => { slpText.innerHTML = `${e.target.value}<span style="font-size:16px;font-weight:600;color:var(--text-3);">hrs</span>`; });
-    stars.forEach(star => {
-      star.addEventListener('click', (e) => {
-        const val = parseInt(e.currentTarget.getAttribute('data-val'));
-        sleepQuality = val;
-        stars.forEach(s => s.classList.toggle('active', parseInt(s.getAttribute('data-val')) <= val));
-      });
-    });
-    chips.forEach(chip => chip.addEventListener('click', e => e.currentTarget.classList.toggle('active')));
-
-    document.getElementById('btn-log-sleep').addEventListener('click', () => {
-      const activeChips = Array.from(document.querySelectorAll('.ctx-chip.active')).map(c => c.getAttribute('data-ctx'));
-      const log = { date: new Date().toISOString(), hours: parseFloat(slpSlider.value), quality: sleepQuality, tags: activeChips };
-      let logs = JSON.parse(localStorage.getItem('kw_sleep_log') || '[]');
-      logs.unshift(log); localStorage.setItem('kw_sleep_log', JSON.stringify(logs));
-      
-      const btn = document.getElementById('btn-log-sleep');
-      btn.textContent = "Saved ✓"; btn.style.background = "var(--coh-high)";
-      setTimeout(() => { btn.textContent = "Log Readiness"; btn.style.background = "var(--text-1)"; }, 2000);
-    });
-
-    // --- BOLT SCORE ---
-    let boltStart = 0, boltRaf = null, boltRunning = false;
-    const boltDisplay = document.getElementById('bolt-display');
-    const btnBolt = document.getElementById('btn-bolt-toggle');
+    // 6. STATE
+    let isSessionActive = false;
+    let audioEnabled = false;
+    let activeProtocol = 'resonant';
+    let targetBpm = 6.0;
+    let pacerRaf = null;
+    let sessionStartTime = 0;
+    let waveBuffer = [];
+    const WAVE_MAX = 120;
     
-    function updateBolt() {
-      if(!boltRunning) return;
-      const sec = (performance.now() - boltStart) / 1000;
-      boltDisplay.innerHTML = `${sec.toFixed(1)}<span>s</span>`;
-      boltRaf = requestAnimationFrame(updateBolt);
-    }
-    btnBolt.addEventListener('click', () => {
-      if(!boltRunning) {
-        boltRunning = true; boltStart = performance.now(); updateBolt();
-        btnBolt.textContent = "Stop Timer"; btnBolt.style.background = "var(--coh-low)";
-      } else {
-        boltRunning = false; cancelAnimationFrame(boltRaf);
-        btnBolt.textContent = "Saved ✓"; btnBolt.style.background = "var(--coh-high)";
-        
-        const score = (performance.now() - boltStart) / 1000;
-        let logs = JSON.parse(localStorage.getItem('kw_bolt_log') || '[]');
-        logs.unshift({ date: new Date().toISOString(), score: score });
-        localStorage.setItem('kw_bolt_log', JSON.stringify(logs));
+    let ibiHistory = [];
+    let coherenceScore = 50;
+    let currentPacerPhase = 'hold';
 
-        setTimeout(() => { btnBolt.textContent = "Start Timer"; btnBolt.style.background = "var(--accent-inhale)"; boltDisplay.innerHTML = `00.0<span>s</span>`; }, 2000);
-      }
-    });
-
-    // --- ACTIVE STAND TEST ---
-    const standModal = document.getElementById('standModal');
-    const standPhaseText = document.getElementById('stand-phase-text');
-    const standTimer = document.getElementById('stand-timer');
-    const standProgress = document.getElementById('stand-progress');
-    const standFingerStatus = document.getElementById('stand-finger-status');
-    const standInsight = document.getElementById('stand-insight');
-    const standResults = document.getElementById('stand-results');
-    
-    const STAND_PHASE_MS = 120000; // 2 minutes per phase
-    let standState = 'idle'; // idle, calibrating, lying, transition, standing, done
-    let standStartTime = 0;
-    let standRaf = null;
-    let standIbisLying = [];
-    let standIbisStanding = [];
-    let calibTimerStand = null;
-
-    function handleStandFinger(present) {
-      if (!present) {
-        clearTimeout(calibTimerStand);
-        standFingerStatus.textContent = 'Adjust Finger'; standFingerStatus.style.color = 'var(--text-3)';
-        if(standState === 'calibrating') { standPhaseText.textContent = "Cover lens to begin."; }
-      } else {
-        if(standState === 'idle' || standState === 'calibrating') {
-          standState = 'calibrating';
-          standFingerStatus.textContent = 'Calibrating...'; standFingerStatus.style.color = 'var(--text-1)';
-          standPhaseText.textContent = "Hold still.";
-          calibTimerStand = setTimeout(() => {
-            standFingerStatus.textContent = 'Signal Locked'; standFingerStatus.style.color = 'var(--coh-high)';
-            startPhase('lying');
-          }, 3000);
-        }
-      }
-    }
-
-    function handleStandBeat(beat) {
-      if(standState !== 'lying' && standState !== 'standing') return;
-      const ibiMs = beat.instantPeriod * 1000;
-      if (standState === 'lying') standIbisLying.push(ibiMs);
-      if (standState === 'standing') standIbisStanding.push(ibiMs);
-    }
-
-    function startPhase(phase) {
-      standState = phase;
-      standStartTime = performance.now();
-      if(phase === 'lying') {
-        standPhaseText.textContent = "Lie down flat.";
-        standPhaseText.style.color = 'var(--text-1)';
-      } else if(phase === 'standing') {
-        standPhaseText.textContent = "Stand up and stay still.";
-        standPhaseText.style.color = 'var(--text-1)';
-      }
-    }
-
-    function updateStandLoop() {
-      if(standState === 'idle' || standState === 'calibrating' || standState === 'done') {
-        standRaf = requestAnimationFrame(updateStandLoop); return;
-      }
-      
-      const elapsed = performance.now() - standStartTime;
-      
-      if(standState === 'lying' || standState === 'standing') {
-        const rem = Math.max(0, STAND_PHASE_MS - elapsed);
-        const sec = Math.floor(rem / 1000);
-        standTimer.textContent = `0${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,'0')}`;
-        standProgress.style.width = `${(elapsed/STAND_PHASE_MS)*100}%`;
-        standProgress.style.background = standState === 'lying' ? 'var(--accent-inhale)' : 'var(--accent-exhale)';
-
-        if(rem === 0) {
-          if(standState === 'lying') {
-            standState = 'transition'; standStartTime = performance.now();
-            AudioEngine.beep(880, 'sine', 0.8); // Alert!
-            standPhaseText.textContent = "STAND UP NOW";
-            standPhaseText.style.color = "var(--coh-med)";
-            standProgress.style.width = "0%";
-          } else {
-            finishStandTest();
-          }
-        }
-      } else if (standState === 'transition') {
-        // 10 second grace period to stand up safely
-        const rem = Math.max(0, 10000 - elapsed);
-        const sec = Math.ceil(rem / 1000);
-        standTimer.textContent = `00:${sec.toString().padStart(2,'0')}`;
-        if(rem === 0) {
-          AudioEngine.beep(660, 'sine', 0.3);
-          startPhase('standing');
-        }
-      }
-
-      standRaf = requestAnimationFrame(updateStandLoop);
-    }
-
-    async function finishStandTest() {
-      standState = 'done';
-      cancelAnimationFrame(standRaf);
-      if (typeof window.ePATCore !== 'undefined') { await window.ePATCore.BeatDetector.stop(); window.ePATCore.WakeLockCtrl.release(); }
-      
-      standPhaseText.textContent = "Test Complete";
-      standPhaseText.style.color = "var(--coh-high)";
-      standTimer.style.display = "none";
-      standProgress.parentElement.style.display = "none";
-
-      const rRMSSD = Math.round(computeRMSSD(standIbisLying));
-      const sRMSSD = Math.round(computeRMSSD(standIbisStanding));
-      
-      document.getElementById('stand-res-rmssd').textContent = rRMSSD;
-      document.getElementById('stand-std-rmssd').textContent = sRMSSD;
-      
-      standResults.style.opacity = "1";
-      standInsight.style.display = "block";
-
-      const drop = rRMSSD - sRMSSD;
-      if(rRMSSD < 10) standInsight.textContent = "Insufficient clean data gathered. Please try again.";
-      else if(drop < 15) standInsight.textContent = "Excellent. Your nervous system is fully recovered and resilient to stress.";
-      else if(drop < 35) standInsight.textContent = "Normal drop. Your body is handling standard load well.";
-      else standInsight.textContent = "Significant drop detected. Your sympathetic nervous system is heavily fatigued. Prioritize rest.";
-
-      // Save it
-      let logs = JSON.parse(localStorage.getItem('kw_stand_log') || '[]');
-      logs.unshift({ date: new Date().toISOString(), restRMSSD: rRMSSD, standRMSSD: sRMSSD });
-      localStorage.setItem('kw_stand_log', JSON.stringify(logs));
-    }
-
-    document.getElementById('btn-start-stand').addEventListener('click', async () => {
-      standModal.classList.add('open');
-      standState = 'idle'; standIbisLying = []; standIbisStanding = [];
-      standTimer.style.display = "block"; standTimer.textContent = "02:00";
-      standProgress.parentElement.style.display = "block"; standProgress.style.width = "0%";
-      standResults.style.opacity = "0"; standInsight.style.display = "none";
-      standPhaseText.textContent = "Cover lens to begin."; standPhaseText.style.color = "var(--text-1)";
-      standFingerStatus.textContent = 'Awaiting Signal'; standFingerStatus.style.color = 'var(--text-3)';
-
-      if (typeof window.ePATCore !== 'undefined') {
-        try {
-          await window.ePATCore.WakeLockCtrl.request();
-          await window.ePATCore.BeatDetector.start({
-            video: document.getElementById('stand-video-feed'), canvas: document.getElementById('stand-sampling-canvas'),
-            onBeatCb: handleStandBeat, onFingerChangeCb: handleStandFinger, onPPGSampleCb: ()=>{}, onSqiUpdateCb: ()=>{}
-          });
-          standRaf = requestAnimationFrame(updateStandLoop);
-        } catch(err) { console.error(err); alert("Camera permission required."); }
-      }
-    });
-
-    document.getElementById('btn-cancel-stand').addEventListener('click', async () => {
-      standState = 'done'; cancelAnimationFrame(standRaf);
-      if (typeof window.ePATCore !== 'undefined') { await window.ePATCore.BeatDetector.stop(); window.ePATCore.WakeLockCtrl.release(); }
-      standModal.classList.remove('open');
-    });
-
-    // ══════════════════════════════════════════════════════════════════
-    // PHASE 1: TRAIN TAB LOGIC (Core Biofeedback)
-    // ══════════════════════════════════════════════════════════════════
-    
     // 7. CANVAS SETUP
     const waveCtx = ui.waveCanvas.getContext('2d');
     function resizeCanvases() {
@@ -924,7 +610,8 @@
         ui.waveCanvas.width = r.width * dpr; ui.waveCanvas.height = r.height * dpr; waveCtx.scale(dpr, dpr);
       }
     }
-    window.addEventListener('resize', resizeCanvases); requestAnimationFrame(resizeCanvases);
+    window.addEventListener('resize', resizeCanvases);
+    requestAnimationFrame(resizeCanvases);
 
     function drawWave() {
       const W = ui.waveCanvas.width/(window.devicePixelRatio||1), H = ui.waveCanvas.height/(window.devicePixelRatio||1);
@@ -945,18 +632,19 @@
       waveCtx.stroke();
     }
 
-    let trainCalibTimer = null;
+    // 8. EPAT CALLBACKS
+    let calibrationTimeout = null;
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
       if (!present) {
-        clearTimeout(trainCalibTimer);
+        clearTimeout(calibrationTimeout);
         ui.fingerText.textContent = 'Adjust Finger';
         ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent = '--';
         waveBuffer = []; drawWave();
         if (isSessionActive) ui.cameraGuide.classList.add('active');
       } else {
         ui.fingerText.textContent = 'Calibrating...';
-        trainCalibTimer = setTimeout(() => {
+        calibrationTimeout = setTimeout(() => {
           if (isSessionActive) {
             ui.fingerText.textContent = 'Signal Good';
             ui.liveBpm.classList.remove('dim');
@@ -972,6 +660,7 @@
       ui.liveBpm.textContent = Math.round(beat.averageBPM);
       ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs) });
       
+      // Simple Coherence Math
       if (ibiHistory.length >= 2) {
         const prev = ibiHistory[ibiHistory.length-2].ibi;
         const d = ibiMs - prev;
@@ -984,7 +673,9 @@
         ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`;
         ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
       }
-      ui.beatFlash.classList.add('flash'); setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
+
+      ui.beatFlash.classList.add('flash');
+      setTimeout(()=>ui.beatFlash.classList.remove('flash'), 80);
     }
 
     function handlePPGSample(s) { waveBuffer.push(s); if(waveBuffer.length>WAVE_MAX)waveBuffer.shift(); requestAnimationFrame(drawWave); }
@@ -994,53 +685,59 @@
       ui.sqiText.style.color = sqi > 0.003 ? 'var(--coh-high)' : 'var(--coh-med)';
     }
 
-    const PROTOCOLS = {
-      resonant:  { name: "Resonant",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
-      box:       { name: "Box Breathing", bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
-      relax:     { name: "4-7-8 Relax",   bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
-      coherence: { name: "Coherence",     bpm: 5.5,  phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
-    };
-
-    let isSessionActive = false, audioEnabled = false, activeProtocol = 'resonant', targetBpm = 6.0;
-    let pacerRaf = null, sessionStartTime = 0, waveBuffer = [], ibiHistory = [], coherenceScore = 50, currentPacerPhase = 'hold';
-    const WAVE_MAX = 120;
-
+    // 9. PACER LOOP
     function animatePacer() {
       if (!isSessionActive) return;
-      const elapsedMs = performance.now() - sessionStartTime;
+      const now = performance.now();
+      const elapsedMs = now - sessionStartTime;
+
       const total = Math.floor(elapsedMs / 1000);
       ui.sessionTime.textContent = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
 
       const pDef = PROTOCOLS[activeProtocol];
-      const cycleMs = (60 / (pDef.customBpm ? targetBpm : pDef.bpm)) * 1000;
+      const currentBpm = pDef.customBpm ? targetBpm : pDef.bpm;
+      const cycleMs = (60 / currentBpm) * 1000;
       const phaseProgress = (elapsedMs % cycleMs) / cycleMs;
       const [pIn, pHIn, pOut] = pDef.phases;
       let scale = 1, color = 'var(--border-md)', shadow = '', text = '';
 
       if (phaseProgress < pIn) {
-        const p = phaseProgress / pIn; const ease = Math.sin(p * Math.PI / 2);
-        scale = 1 + ease * 0.4; color = 'var(--accent-inhale)'; shadow = `0 0 30px rgba(0,122,255,${0.2 + ease * 0.3})`;
+        const p = phaseProgress / pIn;
+        const ease = Math.sin(p * Math.PI / 2);
+        scale = 1 + ease * 0.4;
+        color = 'var(--accent-inhale)';
+        shadow = `0 0 30px rgba(0,122,255,${0.2 + ease * 0.3})`;
         text = 'Inhale'; currentPacerPhase = 'inhale';
       } else if (phaseProgress < pIn + pHIn) {
         scale = 1.4; color = 'var(--accent-inhale)'; shadow = '0 0 30px rgba(0,122,255,0.5)'; text = 'Hold'; currentPacerPhase = 'hold';
       } else if (phaseProgress < pIn + pHIn + pOut) {
-        const p = (phaseProgress - pIn - pHIn) / pOut; const ease = 1 - Math.sin((1 - p) * Math.PI / 2);
-        scale = 1.4 - ease * 0.4; color = 'var(--accent-exhale)'; shadow = `0 0 15px rgba(175,82,222,${0.5 - ease * 0.3})`;
+        const p = (phaseProgress - pIn - pHIn) / pOut;
+        const ease = 1 - Math.sin((1 - p) * Math.PI / 2);
+        scale = 1.4 - ease * 0.4;
+        color = 'var(--accent-exhale)';
+        shadow = `0 0 15px rgba(175,82,222,${0.5 - ease * 0.3})`;
         text = 'Exhale'; currentPacerPhase = 'exhale';
       } else {
         scale = 1; color = 'var(--accent-exhale)'; shadow = '0 0 15px rgba(175,82,222,0.2)'; text = 'Hold'; currentPacerPhase = 'hold';
       }
 
-      ui.pacerRing.style.transform = `scale(${scale})`; ui.pacerRing.style.borderColor = color; ui.pacerRing.style.boxShadow = shadow;
+      ui.pacerRing.style.transform = `scale(${scale})`;
+      ui.pacerRing.style.borderColor = color;
+      ui.pacerRing.style.boxShadow = shadow;
       if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; }
+
       pacerRaf = requestAnimationFrame(animatePacer);
     }
 
+    // 10. SESSION CONTROL
     async function startSession() {
       if (isSessionActive) { stopSession(); return; }
+      
       ibiHistory=[]; waveBuffer=[]; coherenceScore=50;
       ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)';
-      ui.cameraGuide.classList.add('active'); document.body.classList.add('session-active');
+      ui.cameraGuide.classList.add('active');
+      document.body.classList.add('session-active');
+      
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`;
       ui.btnMain.classList.add('active');
 
@@ -1052,44 +749,67 @@
             onBeatCb: handleBeat, onFingerChangeCb: handleFingerChange, onPPGSampleCb: handlePPGSample, onSqiUpdateCb: handleSQI
           });
         } catch(err) { console.error(err); stopSession(); alert("Camera permission required."); return; }
+      } else {
+        console.warn("ePAT Core not found. UI running in dummy mode.");
       }
 
       isSessionActive=true; sessionStartTime=performance.now();
       if(audioEnabled) {
-         AudioEngine.init(); const pDef = PROTOCOLS[activeProtocol];
+         AudioEngine.init();
+         const pDef = PROTOCOLS[activeProtocol];
          AudioEngine.connect(60 / (pDef.customBpm ? targetBpm : pDef.bpm), pDef.phases);
       }
       pacerRaf=requestAnimationFrame(animatePacer);
     }
 
     async function stopSession() {
-      isSessionActive=false; cancelAnimationFrame(pacerRaf); AudioEngine.stop();
+      isSessionActive=false; cancelAnimationFrame(pacerRaf);
+      AudioEngine.stop();
       if (typeof window.ePATCore !== 'undefined') { await window.ePATCore.BeatDetector.stop(); window.ePATCore.WakeLockCtrl.release(); }
+      
       document.body.classList.remove('session-active');
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training`;
       ui.btnMain.classList.remove('active');
+      
       ui.pacerRing.style.transform='scale(1)'; ui.pacerRing.style.borderColor='var(--border-md)'; ui.pacerRing.style.boxShadow='none';
       ui.pacerText.textContent='Ready'; ui.pacerText.style.color='var(--text-3)';
       ui.cameraGuide.classList.remove('active');
       ui.fingerDot.classList.remove('active'); ui.fingerText.textContent='Awaiting Signal';
       ui.sqiText.textContent='SQI: --'; ui.sqiText.style.color='var(--text-3)';
       ui.liveBpm.textContent='--'; ui.liveBpm.classList.add('dim');
+      
+      // Clear waveform cleanly
       waveBuffer=[]; drawWave();
     }
 
+    // 11. EVENT LISTENERS
     ui.btnMain.addEventListener('click', startSession);
+    
     ui.btnAudio.addEventListener('click', () => {
-      audioEnabled = !audioEnabled; ui.btnAudio.classList.toggle('active', audioEnabled);
+      audioEnabled = !audioEnabled;
+      ui.btnAudio.classList.toggle('active', audioEnabled);
       ui.audioWaves.style.display = audioEnabled ? 'block' : 'none';
       if (!audioEnabled) AudioEngine.disconnect();
     });
 
+    // Settings Sheet Logic
     ui.btnSettings.addEventListener('click', () => { ui.settingsSheet.classList.add('open'); ui.overlay.classList.add('open'); });
     const closeSettings = () => { ui.settingsSheet.classList.remove('open'); ui.overlay.classList.remove('open'); };
-    ui.closeSettingsBtn.addEventListener('click', closeSettings); ui.saveSettingsBtn.addEventListener('click', closeSettings); ui.overlay.addEventListener('click', closeSettings);
-    ui.selectProtocol.addEventListener('change', e => { activeProtocol = e.target.value; ui.groupBpm.style.display = PROTOCOLS[activeProtocol].customBpm ? 'block' : 'none'; });
-    ui.sliderBpm.addEventListener('input', e => { targetBpm = parseFloat(e.target.value); ui.valBpm.textContent = `${targetBpm.toFixed(1)} bpm`; });
+    ui.closeSettingsBtn.addEventListener('click', closeSettings);
+    ui.saveSettingsBtn.addEventListener('click', closeSettings);
+    ui.overlay.addEventListener('click', closeSettings);
 
+    ui.selectProtocol.addEventListener('change', e => {
+      activeProtocol = e.target.value;
+      ui.groupBpm.style.display = PROTOCOLS[activeProtocol].customBpm ? 'block' : 'none';
+    });
+
+    ui.sliderBpm.addEventListener('input', e => {
+      targetBpm = parseFloat(e.target.value);
+      ui.valBpm.textContent = `${targetBpm.toFixed(1)} bpm`;
+    });
+
+    // Init defaults
     let savedRf = parseFloat(localStorage.getItem('kw_rf') || '6.0');
     targetBpm = savedRf; ui.sliderBpm.value = savedRf; ui.valBpm.textContent = `${savedRf.toFixed(1)} bpm`;
   </script>
