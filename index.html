@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-  <title>KW Biofeedback</title>
+  <title>KW Health</title>
   
   <script>
     (function() {
@@ -43,6 +43,7 @@
       --coh-high: #34c759;
       --coh-med: #ff9500;
       --coh-low: #ff3b30;
+      --danger: #ff3b30;
       
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -66,6 +67,7 @@
       --coh-high: #30d158;
       --coh-med: #ff9f0a;
       --coh-low: #ff453a;
+      --danger: #ff453a;
     }
 
     /* ── BASE RESETS ── */
@@ -128,9 +130,27 @@
     .scroll-container::-webkit-scrollbar { display: none; }
     .content-centerer { max-width: 760px; margin: 0 auto; width: 100%; position: relative; }
     
-    .card { background: var(--bg-surface); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 0.5px solid var(--border); }
+    .card { background: var(--bg-surface); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 0.5px solid var(--border); position: relative; }
     .card-label { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;}
-    .card-value { font-size: 32px; font-weight: 200; font-family: ui-monospace, monospace; color: var(--text-1); line-height: 1.2; }
+    
+    /* Gamification Specific */
+    .streak-badge { background: rgba(255, 149, 0, 0.15); color: var(--coh-med); padding: 4px 10px; border-radius: 100px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.3s; }
+    .streak-badge.active { opacity: 1; }
+    
+    .goal-progress-wrap { background: var(--bg-input); height: 8px; border-radius: 4px; width: 100%; margin-top: 6px; overflow: hidden; position: relative; }
+    .goal-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s; }
+    .goal-progress-fill.complete { background: var(--coh-high); }
+    .goal-text { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; margin-top: 12px;}
+    .goal-text span.active { color: var(--accent); }
+
+    .pulse-map-wrap { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+    .pulse-node-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .pulse-day-lbl { font-size: 10px; font-weight: 600; color: var(--text-4); text-transform: uppercase; }
+    .pulse-node { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-input); border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: center; align-items: center;}
+    .pulse-node.base { background: var(--border-md); }
+    .pulse-node.train { background: var(--accent); box-shadow: 0 0 10px rgba(0, 122, 255, 0.4); }
+    .pulse-node.base.train { background: var(--accent); border-color: var(--bg-surface); } /* Did both */
+    .pulse-node.today { border-color: var(--text-3); }
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
     .train-content-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px 100px; width: 100%;}
@@ -173,10 +193,11 @@
 
     /* Controls & Pills */
     .controls-zone { width: 100%; max-width: 340px; margin-top: auto; position: relative; z-index: 20; }
-    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 12px; font-weight: 500;}
+    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 4px; font-weight: 500;}
     
-    .pill-group { display: flex; background: var(--bg-input); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-    .pill-btn { flex: 1; padding: 8px 0; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); text-align: center; cursor: pointer; transition: all 0.2s; border: none; background: transparent; }
+    .pill-group { display: flex; background: var(--bg-input); border-radius: 12px; padding: 4px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+    .pill-group::-webkit-scrollbar { display: none; }
+    .pill-btn { flex: 0 0 auto; min-width: 30%; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); text-align: center; cursor: pointer; transition: all 0.2s; border: none; background: transparent; }
     .pill-btn.active { background: var(--bg-surface); color: var(--text-1); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
     body.session-active .pill-group { opacity: 0.3; pointer-events: none; }
 
@@ -201,17 +222,18 @@
     .btn-secondary:active { opacity: 0.7; }
     
     /* ── TRENDS TAB UI ── */
-    .chart-panel { width: 100%; height: 160px; position: relative; margin-bottom: 16px; background: var(--bg-input); border-radius: 12px; overflow: hidden; padding: 12px;}
+    .chart-panel { width: 100%; height: 220px; position: relative; margin-bottom: 24px; background: var(--bg-input); border-radius: 12px; overflow: hidden; padding: 12px;}
     .chart-panel canvas { width: 100%; height: 100%; display: block; }
     .insight-text { font-size: 15px; line-height: 1.5; color: var(--text-2); }
     .insight-text strong { color: var(--text-1); }
     
-    .history-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+    .history-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 0.5px solid var(--border); }
     .history-row:last-child { border-bottom: none; }
-    .hist-left { display: flex; flex-direction: column; gap: 4px; }
+    .hist-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .hist-date { font-size: 12px; color: var(--text-3); font-weight: 500; }
     .hist-title { font-size: 15px; font-weight: 600; color: var(--text-1); }
-    .hist-right { display: flex; gap: 16px; text-align: right; }
+    .hist-spark { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; opacity: 0.7; }
+    .hist-right { display: flex; gap: 16px; text-align: right; min-width: 80px; justify-content: flex-end;}
     .hist-stat { display: flex; flex-direction: column; }
     .hist-val { font-size: 16px; font-family: ui-monospace, monospace; color: var(--text-1); font-weight: 600; }
     .hist-lbl { font-size: 10px; text-transform: uppercase; color: var(--text-3); }
@@ -270,10 +292,17 @@
   <div id="assessView" class="app-view">
     <div class="scroll-container">
       <div class="content-centerer">
+        
         <div class="card">
-          <div class="card-label">Morning Readiness</div>
-          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">Take a 2-minute baseline test to measure your resting HRV and nervous system recovery.</p>
+          <div class="card-label">Morning Readiness <div class="streak-badge" id="streak-badge">🔥 <span id="streak-val">0</span></div></div>
+          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">Take a 2-minute baseline to calculate your daily readiness score vs. your 7-day rolling average.</p>
           <button class="btn-secondary" id="btn-readiness" style="background: var(--accent); color: #fff;">Start 2-Min Baseline</button>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Cardio Recovery</div>
+          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">Measure heart rate decay (HRR) over 2 minutes immediately following a heavy workout.</p>
+          <button class="btn-secondary" id="btn-hrr" style="background: var(--bg-input); border: 1px solid var(--border-md);">Start 2-Min HRR Test</button>
         </div>
 
         <div class="card">
@@ -294,18 +323,9 @@
           
           <div style="font-weight:600; margin-bottom:8px;">Context</div>
           <div class="chip-row" id="sleep-tags">
-            <div class="s-chip" data-tag="alcohol">Alcohol</div><div class="s-chip" data-tag="late-meal">Late Meal</div><div class="s-chip" data-tag="stress">Stressful Day</div>
+            <div class="s-chip" data-tag="Alcohol">Alcohol</div><div class="s-chip" data-tag="Late Meal">Late Meal</div><div class="s-chip" data-tag="Stress">Stressful Day</div>
           </div>
           <button class="btn-secondary" id="btn-save-sleep">Save Sleep Log</button>
-        </div>
-
-        <div class="card">
-          <div class="card-label">BOLT Score Test</div>
-          <p style="font-size: 14px; color: var(--text-2); margin-bottom: 12px;">Exhale normally, pinch your nose, and hold. Stop at the <strong>first definite desire</strong> to breathe.</p>
-          <div style="text-align:center; margin-bottom: 16px;">
-            <div class="card-value" id="bolt-time">00.0</div><div style="font-size:12px; color:var(--text-3); text-transform:uppercase;">Seconds</div>
-          </div>
-          <button class="btn-secondary" id="btn-bolt-toggle">Start Timer</button>
         </div>
       </div>
     </div>
@@ -343,10 +363,15 @@
       </div>
 
       <div class="controls-zone">
-        <div class="status-row"><span id="session-time">00:00</span><span id="training-tip" style="opacity:0.6;">Target: 20 min/day</span></div>
+        <div class="status-row">
+          <span id="session-time">00:00</span>
+        </div>
+        <div class="goal-text"><span>Weekly Target</span><span id="weekly-goal-text">0 / 60 Min</span></div>
+        <div class="goal-progress-wrap" style="margin-bottom: 24px;"><div class="goal-progress-fill" id="weekly-goal-fill"></div></div>
+        
         <div class="pill-group" id="protocol-pills">
           <button class="pill-btn active" data-proto="resonant">Focus</button>
-          <button class="pill-btn" data-proto="relax">Wind Down</button>
+          <button class="pill-btn" data-proto="relax">Wind Down (4-7-8)</button>
           <button class="pill-btn" data-proto="energize">Energize</button>
         </div>
         <button class="btn-main" id="btn-main">
@@ -360,21 +385,33 @@
   <div id="trendsView" class="app-view">
     <div class="scroll-container">
       <div class="content-centerer">
+        
         <div class="card">
-          <div class="card-label">Daily Insight</div>
-          <div class="insight-text" id="daily-insight">Complete a sleep log and a morning readiness baseline to generate insights.</div>
+          <div class="card-label">Weekly Consistency</div>
+          <p style="font-size: 13px; color: var(--text-3); margin-bottom: 12px; line-height: 1.3;">Inner grey circle indicates baseline recorded. Bright blue outer glow indicates a training session completed.</p>
+          <div class="pulse-map-wrap" id="pulse-map">
+            <!-- Populated via JS -->
+          </div>
         </div>
+        
+        <div class="card">
+          <div class="card-label">Daily Insights Engine</div>
+          <div class="insight-text" id="daily-insight">Logging sleep data and Morning Readiness baselines will reveal correlations between your habits and your recovery.</div>
+        </div>
+        
         <div class="card" id="charts-card" style="display:none;">
           <div class="card-label">Latest Session Data</div>
-          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;">IBI Tachogram</div>
+          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px;">IBI Tachogram</div>
           <div class="chart-panel"><canvas id="tach-canvas"></canvas></div>
-          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;">Poincaré Plot</div>
+          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px;">Poincaré Plot</div>
           <div class="chart-panel"><canvas id="poincare-canvas"></canvas></div>
         </div>
+        
         <div class="card">
-          <div class="card-label">History</div>
+          <div class="card-label">Session History</div>
           <div id="history-list"><div style="text-align:center; padding: 20px; color: var(--text-3); font-size: 14px;">No sessions yet.</div></div>
         </div>
+
       </div>
     </div>
   </div>
@@ -419,25 +456,46 @@
   <!-- SUMMARY SHEET -->
   <div class="sheet" id="summarySheet">
     <div class="handle"></div>
-    <div class="sheet-title">Session Complete</div>
+    <div class="sheet-title" id="summary-title">Session Complete</div>
     
-    <div id="summary-delta" style="background: rgba(0,122,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: none; text-align: center;">
-      <div style="font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">State Shift</div>
-      <div style="font-size: 15px; font-weight: 500; color: var(--text-1);" id="summary-delta-text">You successfully dropped your heart rate.</div>
+    <div id="summary-delta" style="background: var(--bg-input); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center;">
+      <div style="font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;" id="summary-delta-label">State Shift</div>
+      <div style="font-size: 15px; font-weight: 500; color: var(--text-1);" id="summary-delta-text">--</div>
     </div>
     
     <div style="display:flex; justify-content:space-around; margin-bottom: 24px; text-align: center;">
-      <div><div style="font-size: 24px; font-weight: 300; font-family: ui-monospace, monospace; color: var(--text-1);" id="sum-rmssd">--</div><div style="font-size: 10px; text-transform: uppercase; color: var(--text-3); font-weight: 600;">RMSSD</div></div>
-      <div><div style="font-size: 24px; font-weight: 300; font-family: ui-monospace, monospace; color: var(--text-1);" id="sum-coh">--</div><div style="font-size: 10px; text-transform: uppercase; color: var(--text-3); font-weight: 600;">Coherence</div></div>
+      <div><div style="font-size: 24px; font-weight: 300; font-family: ui-monospace, monospace; color: var(--text-1);" id="sum-stat1">--</div><div style="font-size: 10px; text-transform: uppercase; color: var(--text-3); font-weight: 600;" id="sum-lbl1">RMSSD</div></div>
+      <div><div style="font-size: 24px; font-weight: 300; font-family: ui-monospace, monospace; color: var(--text-1);" id="sum-stat2">--</div><div style="font-size: 10px; text-transform: uppercase; color: var(--text-3); font-weight: 600;" id="sum-lbl2">Coherence</div></div>
     </div>
     
-    <div class="sheet-label">What was this for?</div>
+    <div class="sheet-label">Context Tag</div>
     <div class="chip-row" id="session-tags">
-      <div class="s-chip" data-tag="deep-work">Deep Work Prep</div><div class="s-chip" data-tag="panic">Anxiety Rescue</div><div class="s-chip" data-tag="bedtime">Bedtime</div><div class="s-chip" data-tag="post-workout">Post-Workout</div>
+      <div class="s-chip" data-tag="Deep Work">Deep Work</div><div class="s-chip" data-tag="Anxious">Anxious</div><div class="s-chip" data-tag="Pre-Bed">Pre-Bed</div><div class="s-chip" data-tag="Post-Workout">Post-Workout</div>
     </div>
     
     <button class="sheet-btn primary" id="btn-save-summary">Save to History</button>
   </div>
+
+  <!-- MOCK ePATCore for Web Demo Constraints (Delete if using actual library) -->
+  <script>
+    if(typeof window.ePATCore === 'undefined') {
+      window.ePATCore = {
+        WakeLockCtrl: { request: async ()=>true, release: ()=>true },
+        BeatDetector: {
+          timer: null,
+          start: async (cfg) => {
+            cfg.onFingerChangeCb(true);
+            window.ePATCore.BeatDetector.timer = setInterval(() => {
+              const bpm = 60 + Math.sin(Date.now()/1000) * 10 + (Math.random()*5-2);
+              cfg.onBeatCb({ averageBPM: bpm, instantPeriod: 60/bpm });
+              cfg.onPPGSampleCb(Math.sin(Date.now()/100)*100);
+            }, 1000);
+          },
+          stop: async () => clearInterval(window.ePATCore.BeatDetector.timer)
+        }
+      };
+    }
+  </script>
 
   <script src="epat-core.js"></script>
   <script>
@@ -497,15 +555,15 @@
     })();
 
     // GLOBAL STATE
-    let isSessionActive = false, isBaselineMode = false, audioEnabled = false;
+    let currentMode = 'train', audioEnabled = false; 
     let activeProtocol = 'resonant', targetBpm = 6.0;
-    let pacerRaf = null, sessionStartTime = 0;
+    let pacerRaf = null, sessionStartTime = 0, sessionDuration = 0;
     let waveBuffer = [], ibiHistory = [], latestSessionIbis = [];
-    const WAVE_MAX = 120, BASELINE_DUR_MS = 120000;
-    let coherenceScore = 50, currentPacerPhase = 'hold', lastPhase = 'hold';
+    const WAVE_MAX = 120, TEST_DUR_MS = 120000;
+    let coherenceScore = 50, currentPacerPhase = 'hold';
 
     const ui = {
-      btnMain: document.getElementById('btn-main'), sessionTime: document.getElementById('session-time'), trainingTip: document.getElementById('training-tip'),
+      btnMain: document.getElementById('btn-main'), sessionTime: document.getElementById('session-time'),
       btnAudio: document.getElementById('btn-audio'), audioWaves: document.getElementById('audio-waves'), btnSettings: document.getElementById('btn-settings'),
       pacerRing: document.getElementById('pacer-ring'), pacerText: document.getElementById('pacer-instruction'), liveBpm: document.getElementById('live-bpm'),
       fingerDot: document.getElementById('finger-dot'), fingerText: document.getElementById('finger-text'), sqiText: document.getElementById('sqi-text'),
@@ -551,19 +609,26 @@
       pcCtx.beginPath(); pcCtx.strokeStyle='rgba(161,161,170,0.3)'; pcCtx.lineWidth=1; pcCtx.setLineDash([3,3]); pcCtx.moveTo(toX(minV),toY(minV)); pcCtx.lineTo(toX(maxV),toY(maxV)); pcCtx.stroke(); pcCtx.setLineDash([]);
       const n=latestSessionIbis.length-1; for (let i=0;i<n;i++) { pcCtx.beginPath(); pcCtx.fillStyle='var(--accent)'; pcCtx.globalAlpha = 0.2 + (i/n)*0.8; pcCtx.arc(toX(latestSessionIbis[i]), toY(latestSessionIbis[i+1]), 3, 0, Math.PI*2); pcCtx.fill(); } pcCtx.globalAlpha = 1.0;
     }
+    
+    function createSparkline(data) {
+        if(!data || data.length < 2) return '';
+        const max = Math.max(...data), min = Math.min(...data), range = max - min || 1;
+        const pts = data.map((v, i) => `${(i/(data.length-1))*60},${24 - ((v-min)/range)*24}`).join(' L ');
+        return `<svg width="60" height="24" viewBox="0 0 60 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M ${pts}"/></svg>`;
+    }
 
     function computeRMSSD(ibis) { let sumSq = 0, n = 0; for (let i = 1; i < ibis.length; i++) { const lm = (ibis[i] + ibis[i-1]) / 2, diff = ibis[i] - ibis[i-1]; if (Math.abs(diff) / lm < 0.20) { sumSq += diff*diff; n++; } } return n > 0 ? Math.sqrt(sumSq / n) : 0; }
 
     let calibrationTimeout = null;
     function handleFingerChange(present) {
       ui.fingerDot.classList.toggle('active', present);
-      if (!present) { clearTimeout(calibrationTimeout); ui.fingerText.textContent = 'Adjust Finger'; ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent = '--'; waveBuffer = []; drawWave(); if (isSessionActive) { ui.cameraGuide.classList.add('active'); ui.guideText.textContent = 'Cover lens'; ui.guideSubtext.textContent = 'Center fingertip over rear camera.'; }
-      } else { ui.fingerText.textContent = 'Calibrating...'; if(isSessionActive) { ui.guideText.textContent = 'Hold still'; ui.guideSubtext.innerHTML = isBaselineMode ? 'Illuminating capillaries...<br>Breathe naturally.' : 'Illuminating capillaries...<br>Follow the pacer.'; } calibrationTimeout = setTimeout(() => { if (isSessionActive) { ui.fingerText.textContent = 'Signal Good'; ui.liveBpm.classList.remove('dim'); ui.cameraGuide.classList.remove('active'); } }, 3000); }
+      if (!present) { clearTimeout(calibrationTimeout); ui.fingerText.textContent = 'Adjust Finger'; ui.liveBpm.classList.add('dim'); ui.liveBpm.textContent = '--'; waveBuffer = []; drawWave(); if (document.body.classList.contains('session-active')) { ui.cameraGuide.classList.add('active'); ui.guideText.textContent = 'Cover lens'; ui.guideSubtext.textContent = 'Center fingertip over rear camera.'; }
+      } else { ui.fingerText.textContent = 'Calibrating...'; if(document.body.classList.contains('session-active')) { ui.guideText.textContent = 'Hold still'; ui.guideSubtext.innerHTML = currentMode !== 'train' ? 'Illuminating capillaries...<br>Breathe naturally.' : 'Illuminating capillaries...<br>Follow the pacer.'; } calibrationTimeout = setTimeout(() => { if (document.body.classList.contains('session-active')) { ui.fingerText.textContent = 'Signal Good'; ui.liveBpm.classList.remove('dim'); ui.cameraGuide.classList.remove('active'); } }, 3000); }
     }
 
     function handleBeat(beat) {
-      if (!isSessionActive) return; const ibiMs = beat.instantPeriod * 1000, bpm = Math.round(beat.averageBPM); ui.liveBpm.textContent = bpm; ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs), bpm });
-      if (!isBaselineMode && !isRfMode && ibiHistory.length >= 2) {
+      if (!document.body.classList.contains('session-active')) return; const ibiMs = beat.instantPeriod * 1000, bpm = Math.round(beat.averageBPM); ui.liveBpm.textContent = bpm; ibiHistory.push({ time: performance.now(), ibi: Math.round(ibiMs), bpm });
+      if (currentMode === 'train' && !isRfMode && ibiHistory.length >= 2) {
         const prev = ibiHistory[ibiHistory.length-2].ibi, d = ibiMs - prev; let score = 50;
         if (Math.abs(d) >= 5) { if (currentPacerPhase === 'inhale') score = (d < 0) ? 100 : 0; else if (currentPacerPhase === 'exhale') score = (d > 0) ? 100 : 0; }
         coherenceScore = coherenceScore * 0.92 + score * 0.08; ui.cohBar.style.width = `${Math.max(5, coherenceScore)}%`; ui.cohBar.style.backgroundColor = coherenceScore >= 70 ? 'var(--coh-high)' : coherenceScore >= 40 ? 'var(--coh-med)' : 'var(--coh-low)';
@@ -575,9 +640,9 @@
     function handleSQI(sqiRed, sqiGreen, activeChannel) { const sqi = activeChannel === 'green' ? sqiGreen : sqiRed; ui.sqiText.textContent = `SQI: ${(sqi * 100).toFixed(2)}%`; ui.sqiText.style.color = sqi > 0.003 ? 'var(--coh-high)' : 'var(--coh-med)'; }
 
     function animatePacer() {
-      if (!isSessionActive) return; const elapsedMs = performance.now() - sessionStartTime;
-      if (isBaselineMode) {
-        const rem = BASELINE_DUR_MS - elapsedMs; if (rem <= 0) { stopSession(true); return; }
+      if (!document.body.classList.contains('session-active')) return; const elapsedMs = performance.now() - sessionStartTime;
+      if (currentMode === 'baseline' || currentMode === 'hrr') {
+        const rem = TEST_DUR_MS - elapsedMs; if (rem <= 0) { stopSession(true); return; }
         const s = Math.floor(rem / 1000); ui.sessionTime.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; ui.pacerRing.style.transform = `scale(1)`; ui.pacerRing.style.borderColor = 'var(--border-md)'; ui.pacerRing.style.boxShadow = 'none'; ui.pacerText.textContent = 'Recording'; ui.pacerText.style.color = 'var(--accent)';
       } else if (isRfMode) {
         const stepElapsed = elapsedMs - rfStepIndex * 120000, rem = 120000 - stepElapsed, s = Math.max(0, Math.floor(rem / 1000));
@@ -603,11 +668,95 @@
       if (ui.pacerText.textContent !== text) { ui.pacerText.textContent = text; ui.pacerText.style.color = color; triggerHaptic(currentPacerPhase); }
     }
 
-    async function startSession(baseline = false) {
-      if (isSessionActive) { stopSession(); return; }
-      isBaselineMode = baseline; ibiHistory=[]; waveBuffer=[]; coherenceScore=50; latestSessionIbis=[];
-      ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)'; ui.cohWrap.style.opacity = isBaselineMode ? '0' : '1';
-      ui.trainingTip.textContent = isBaselineMode ? '2-Min Baseline' : 'Target: 20 min/day';
+    // --- GAMIFICATION LOGIC ---
+    function renderGamification() {
+        const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+        
+        // 1. Calculate Streak
+        const baselines = history.filter(h => h.protocol === 'Morning Baseline');
+        let streak = 0;
+        let d = new Date();
+        d.setHours(0,0,0,0);
+        
+        // Check if baseline today
+        let hasToday = baselines.some(b => { const bd = new Date(b.date); bd.setHours(0,0,0,0); return bd.getTime() === d.getTime(); });
+        if(!hasToday) {
+            // Check yesterday. If no yesterday, streak is broken (0).
+            d.setDate(d.getDate() - 1);
+            let hasYesterday = baselines.some(b => { const bd = new Date(b.date); bd.setHours(0,0,0,0); return bd.getTime() === d.getTime(); });
+            if(hasYesterday) { d.setDate(d.getDate() + 1); } // Reset to start checking from yesterday backwards
+            else streak = 0;
+        }
+
+        if(hasToday || streak !== 0 || baselines.length > 0) {
+           let checkDate = new Date();
+           checkDate.setHours(0,0,0,0);
+           if(!hasToday) checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday
+           
+           let run = true;
+           while(run) {
+               if(baselines.some(b => { const bd = new Date(b.date); bd.setHours(0,0,0,0); return bd.getTime() === checkDate.getTime(); })) {
+                   streak++;
+                   checkDate.setDate(checkDate.getDate() - 1);
+               } else { run = false; }
+           }
+        }
+        
+        const badge = document.getElementById('streak-badge');
+        if(streak > 0) { document.getElementById('streak-val').textContent = streak; badge.classList.add('active'); } 
+        else { badge.classList.remove('active'); }
+
+        // 2. Calculate Weekly Minutes (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const trainSessions = history.filter(h => h.protocol !== 'Morning Baseline' && h.protocol !== 'Cardio Recovery' && new Date(h.date) >= sevenDaysAgo);
+        const totalSecs = trainSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const totalMins = Math.floor(totalSecs / 60);
+        const goalMins = 60; // 60 mins a week
+        
+        document.getElementById('weekly-goal-text').textContent = `${totalMins} / ${goalMins} Min`;
+        const fillEl = document.getElementById('weekly-goal-fill');
+        const pct = Math.min(100, (totalMins / goalMins) * 100);
+        fillEl.style.width = `${pct}%`;
+        if(totalMins >= goalMins) { fillEl.classList.add('complete'); document.getElementById('weekly-goal-text').classList.add('active'); }
+        else { fillEl.classList.remove('complete'); document.getElementById('weekly-goal-text').classList.remove('active'); }
+
+        // 3. Render Pulse Map
+        let mapHtml = '';
+        const today = new Date(); today.setHours(0,0,0,0);
+        const dayNames = ['S','M','T','W','T','F','S'];
+        for(let i=6; i>=0; i--) {
+            let loopD = new Date(today); loopD.setDate(loopD.getDate() - i);
+            let dStr = dayNames[loopD.getDay()];
+            
+            let didBase = baselines.some(b => { const bd = new Date(b.date); bd.setHours(0,0,0,0); return bd.getTime() === loopD.getTime(); });
+            let didTrain = trainSessions.some(t => { const td = new Date(t.date); td.setHours(0,0,0,0); return td.getTime() === loopD.getTime(); });
+            
+            let classes = 'pulse-node';
+            if(didBase) classes += ' base';
+            if(didTrain) classes += ' train';
+            if(i === 0) classes += ' today';
+            
+            mapHtml += `<div class="pulse-node-group"><div class="${classes}"></div><div class="pulse-day-lbl">${dStr}</div></div>`;
+        }
+        document.getElementById('pulse-map').innerHTML = mapHtml;
+    }
+
+    function get7DayBaseline() {
+        const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+        const baselines = history.filter(h => h.protocol === 'Morning Baseline');
+        if(baselines.length === 0) return null;
+        const recent = baselines.slice(0, 7);
+        const avg = recent.reduce((s, b) => s + b.rmssd, 0) / recent.length;
+        return Math.round(avg);
+    }
+
+    async function startSession(mode = 'train') {
+      if (document.body.classList.contains('session-active')) { stopSession(); return; }
+      currentMode = mode; ibiHistory=[]; waveBuffer=[]; coherenceScore=50; latestSessionIbis=[];
+      ui.cohBar.style.width='50%'; ui.cohBar.style.backgroundColor='var(--coh-med)'; 
+      ui.cohWrap.style.opacity = (currentMode !== 'train') ? '0' : '1';
+      
       ui.cameraGuide.classList.add('active'); document.body.classList.add('session-active');
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> End Session`; ui.btnMain.classList.add('active');
 
@@ -615,13 +764,14 @@
         try { await window.ePATCore.WakeLockCtrl.request(); await window.ePATCore.BeatDetector.start({ video: document.getElementById('video-feed'), canvas: document.getElementById('sampling-canvas'), onBeatCb: handleBeat, onFingerChangeCb: handleFingerChange, onPPGSampleCb: handlePPGSample, onSqiUpdateCb: handleSQI });
         } catch(err) { console.error(err); stopSession(); alert("Camera permission required."); return; }
       }
-      isSessionActive=true; sessionStartTime=performance.now();
-      if(audioEnabled && !isBaselineMode && !isRfMode) { AudioEngine.init(); const pDef = PROTOCOLS[activeProtocol]; AudioEngine.connect(60 / (pDef.customBpm ? targetBpm : pDef.bpm), pDef.phases); }
+      sessionStartTime=performance.now();
+      if(audioEnabled && currentMode === 'train' && !isRfMode) { AudioEngine.init(); const pDef = PROTOCOLS[activeProtocol]; AudioEngine.connect(60 / (pDef.customBpm ? targetBpm : pDef.bpm), pDef.phases); }
       pacerRaf=requestAnimationFrame(animatePacer);
     }
 
     async function stopSession(showSummary = false) {
-      isSessionActive=false; cancelAnimationFrame(pacerRaf); AudioEngine.stop();
+      if(document.body.classList.contains('session-active')) { sessionDuration = Math.floor((performance.now() - sessionStartTime) / 1000); }
+      cancelAnimationFrame(pacerRaf); AudioEngine.stop();
       if (typeof window.ePATCore !== 'undefined') { await window.ePATCore.BeatDetector.stop(); window.ePATCore.WakeLockCtrl.release(); }
       document.body.classList.remove('session-active');
       ui.btnMain.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training`; ui.btnMain.classList.remove('active'); ui.cohWrap.style.opacity = '1';
@@ -634,18 +784,46 @@
         latestSessionIbis = ibiHistory.map(d=>d.ibi);
         const rmssd = computeRMSSD(latestSessionIbis);
         
-        // Before/After Delta
-        const deltaEl = document.getElementById('summary-delta'), deltaText = document.getElementById('summary-delta-text');
-        deltaEl.style.display = 'none';
-        if (activeProtocol === 'relax' && ibiHistory.length > 15) {
-            const startAvg = ibiHistory.slice(0, 10).reduce((s,d)=>s+d.bpm,0)/10;
-            const endAvg = ibiHistory.slice(-10).reduce((s,d)=>s+d.bpm,0)/10;
+        // Prepare Summary UI
+        const deltaEl = document.getElementById('summary-delta'), deltaText = document.getElementById('summary-delta-text'), deltaLbl = document.getElementById('summary-delta-label');
+        const s1 = document.getElementById('sum-stat1'), l1 = document.getElementById('sum-lbl1');
+        const s2 = document.getElementById('sum-stat2'), l2 = document.getElementById('sum-lbl2');
+        deltaEl.style.display = 'none'; document.getElementById('summary-title').textContent = "Session Complete";
+        
+        if (currentMode === 'hrr') {
+            document.getElementById('summary-title').textContent = "Recovery Assessed";
+            const startAvg = ibiHistory.slice(0, 5).reduce((s,d)=>s+d.bpm,0)/5;
+            const endAvg = ibiHistory.slice(-5).reduce((s,d)=>s+d.bpm,0)/5;
             const drop = Math.round(startAvg - endAvg);
-            if (drop > 2) { deltaEl.style.display = 'block'; deltaText.textContent = `You dropped your heart rate by ${drop} BPM. (${Math.round(startAvg)} → ${Math.round(endAvg)})`; }
+            deltaEl.style.display = 'block'; deltaLbl.textContent = '2-Min HR Decay';
+            deltaText.innerHTML = `You dropped <strong>${drop} BPM</strong>. (${Math.round(startAvg)} → ${Math.round(endAvg)})`;
+            s1.textContent = drop; l1.textContent = "Drop";
+            s2.textContent = Math.round(startAvg); l2.textContent = "Peak BPM";
+        } else if (currentMode === 'baseline') {
+            document.getElementById('summary-title').textContent = "Readiness Assessed";
+            const avg = get7DayBaseline();
+            deltaEl.style.display = 'block'; deltaLbl.textContent = 'Rolling Baseline';
+            if(avg) {
+                const diff = rmssd - avg, pct = Math.round((diff/avg)*100);
+                if(pct < -10) { deltaText.innerHTML = `Your HRV is <strong>${Math.abs(pct)}% below</strong> your 7-day average. Suggesting a Rest Day or Wind Down protocol.`; deltaEl.style.background = 'rgba(255,59,48,0.1)'; deltaLbl.style.color = 'var(--danger)'; }
+                else if(pct > 10) { deltaText.innerHTML = `Your HRV is <strong>${pct}% above</strong> your 7-day average. You are primed for strain today.`; deltaEl.style.background = 'rgba(52,199,89,0.1)'; deltaLbl.style.color = 'var(--coh-high)';}
+                else { deltaText.innerHTML = `Your HRV is right on par with your 7-day baseline.`; deltaEl.style.background = 'var(--bg-input)'; deltaLbl.style.color = 'var(--accent)'; }
+            } else {
+               deltaText.textContent = `Baseline recorded. Log 7 days to generate rolling comparisons.`;
+            }
+            s1.textContent = Math.round(rmssd); l1.textContent = "RMSSD";
+            s2.textContent = Math.round(ibiHistory[ibiHistory.length-1].bpm); l2.textContent = "Resting HR";
+        } else {
+            if (activeProtocol === 'relax' && ibiHistory.length > 15) {
+                const startAvg = ibiHistory.slice(0, 10).reduce((s,d)=>s+d.bpm,0)/10;
+                const endAvg = ibiHistory.slice(-10).reduce((s,d)=>s+d.bpm,0)/10;
+                const drop = Math.round(startAvg - endAvg);
+                if (drop > 2) { deltaEl.style.display = 'block'; deltaLbl.textContent = 'State Shift'; deltaText.textContent = `You dropped your heart rate by ${drop} BPM. (${Math.round(startAvg)} → ${Math.round(endAvg)})`; }
+            }
+            s1.textContent = Math.round(rmssd); l1.textContent = "RMSSD";
+            s2.textContent = `${Math.round(coherenceScore)}%`; l2.textContent = "Coherence";
         }
 
-        document.getElementById('sum-rmssd').textContent = Math.round(rmssd);
-        document.getElementById('sum-coh').textContent = isBaselineMode ? 'N/A' : `${Math.round(coherenceScore)}%`;
         openSheet('summarySheet');
       }
       waveBuffer=[]; drawWave();
@@ -671,14 +849,23 @@
     document.getElementById('btn-save-summary').addEventListener('click', () => {
       const rmssd = computeRMSSD(latestSessionIbis);
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
-      history.unshift({ date: new Date().toISOString(), protocol: isBaselineMode ? 'Morning Baseline' : PROTOCOLS[activeProtocol].name, tags: Array.from(sessionTags), rmssd: Math.round(rmssd), bpm: Math.round(ibiHistory[ibiHistory.length-1].bpm) });
+      
+      let protoName = PROTOCOLS[activeProtocol].name;
+      if(currentMode === 'baseline') protoName = 'Morning Baseline';
+      if(currentMode === 'hrr') protoName = 'Cardio Recovery';
+      
+      const downsampledIbis = latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/50) === 0);
+
+      history.unshift({ date: new Date().toISOString(), duration: sessionDuration, protocol: protoName, tags: Array.from(sessionTags), rmssd: Math.round(rmssd), bpm: Math.round(ibiHistory[ibiHistory.length-1].bpm), ibis: downsampledIbis });
       localStorage.setItem('kw_history', JSON.stringify(history));
       document.getElementById('charts-card').style.display = 'block';
-      renderHistory(); generateInsights(); closeSheet('summarySheet');
+      renderHistory(); generateInsights(); renderGamification(); closeSheet('summarySheet');
     });
 
     // ASSESS TAB
-    document.getElementById('btn-readiness').addEventListener('click', () => { document.querySelector('[data-tab="train"]').click(); startSession(true); });
+    document.getElementById('btn-readiness').addEventListener('click', () => { document.querySelector('[data-tab="train"]').click(); startSession('baseline'); });
+    document.getElementById('btn-hrr').addEventListener('click', () => { document.querySelector('[data-tab="train"]').click(); startSession('hrr'); });
+
     const sleepHours = document.getElementById('sleep-hours'), sleepHoursVal = document.getElementById('sleep-hours-val');
     sleepHours.addEventListener('input', e => sleepHoursVal.textContent = e.target.value);
     let activeStars = 3;
@@ -686,12 +873,77 @@
     const sleepTags = new Set();
     document.querySelectorAll('#sleep-tags .s-chip').forEach(chip => { chip.addEventListener('click', (e) => { const t = e.currentTarget; t.classList.toggle('active'); if(t.classList.contains('active')) sleepTags.add(t.dataset.tag); else sleepTags.delete(t.dataset.tag); }); });
     document.getElementById('btn-save-sleep').addEventListener('click', () => { const logs = JSON.parse(localStorage.getItem('kw_sleep') || '[]'); logs.unshift({ date: new Date().toISOString(), hours: sleepHours.value, quality: activeStars, tags: Array.from(sleepTags) }); localStorage.setItem('kw_sleep', JSON.stringify(logs)); generateInsights(); const btn = document.getElementById('btn-save-sleep'); btn.textContent = 'Saved!'; setTimeout(()=>btn.textContent='Save Sleep Log', 2000); });
-    let boltInterval = null, boltStartTime = 0; const btnBolt = document.getElementById('btn-bolt-toggle'), boltTime = document.getElementById('bolt-time');
-    btnBolt.addEventListener('click', () => { if (boltInterval) { clearInterval(boltInterval); boltInterval = null; btnBolt.textContent = 'Start Timer'; btnBolt.style.background='var(--bg-input)'; btnBolt.style.color='var(--text-1)'; } else { boltStartTime = Date.now(); boltInterval = setInterval(() => { boltTime.textContent = ((Date.now() - boltStartTime)/1000).toFixed(1); }, 100); btnBolt.textContent = 'Stop'; btnBolt.style.background='rgba(255,59,48,0.1)'; btnBolt.style.color='var(--danger)'; } });
 
     // TRENDS TAB
-    function renderHistory() { const history = JSON.parse(localStorage.getItem('kw_history') || '[]'); const list = document.getElementById('history-list'); if (!history.length) return; list.innerHTML = history.slice(0, 15).map(s => `<div class="history-row"><div class="hist-left"><div class="hist-date">${new Date(s.date).toLocaleDateString()}</div><div class="hist-title">${s.protocol}</div></div><div class="hist-right"><div class="hist-stat"><span class="hist-val">${s.rmssd}</span><span class="hist-lbl">RMSSD</span></div><div class="hist-stat"><span class="hist-val">${s.bpm}</span><span class="hist-lbl">BPM</span></div></div></div>`).join(''); }
-    function generateInsights() { const history = JSON.parse(localStorage.getItem('kw_history') || '[]'), sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]'); const insightEl = document.getElementById('daily-insight'); if (!history.length || !sleep.length) return; const lastSleep = sleep[0], today = new Date().toDateString(), todayBaselines = history.filter(h => h.protocol === 'Morning Baseline' && new Date(h.date).toDateString() === today); if (todayBaselines.length > 0) { const latestRMSSD = todayBaselines[0].rmssd; if (lastSleep.quality <= 2 && latestRMSSD > 40) insightEl.innerHTML = `You reported poor sleep (${lastSleep.quality}/5), but your morning HRV (<strong>${latestRMSSD}</strong>) shows your nervous system is actually quite resilient today.`; else if (lastSleep.quality >= 4 && latestRMSSD < 30) insightEl.innerHTML = `You slept well, but your HRV is suppressed today (<strong>${latestRMSSD}</strong>). Consider a Wind Down session.`; else insightEl.innerHTML = `Sleep quality (${lastSleep.quality}/5) matches your nervous system readiness (HRV: <strong>${latestRMSSD}</strong>). Keep up the consistency.`; } else { insightEl.innerHTML = `Log a <strong>Morning Readiness</strong> baseline to compare against your last sleep log.`; } }
+    function renderHistory() { 
+        const history = JSON.parse(localStorage.getItem('kw_history') || '[]'); 
+        const list = document.getElementById('history-list'); 
+        if (!history.length) return; 
+        list.innerHTML = history.slice(0, 15).map(s => 
+            `<div class="history-row">
+                <div class="hist-left"><div class="hist-date">${new Date(s.date).toLocaleDateString()}</div><div class="hist-title">${s.protocol}</div></div>
+                <div class="hist-spark">${createSparkline(s.ibis)}</div>
+                <div class="hist-right">
+                    <div class="hist-stat"><span class="hist-val">${s.rmssd}</span><span class="hist-lbl">RMSSD</span></div>
+                    <div class="hist-stat"><span class="hist-val">${s.bpm}</span><span class="hist-lbl">BPM</span></div>
+                </div>
+            </div>`
+        ).join(''); 
+    }
+
+    function generateInsights() { 
+        const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+        const sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]'); 
+        const insightEl = document.getElementById('daily-insight'); 
+        if (!history.length) return; 
+
+        const baselines = history.filter(h => h.protocol === 'Morning Baseline');
+        if(baselines.length > 2 && sleep.length > 0) {
+            let tagImpacts = {}; let globalBaseSum = 0;
+            baselines.forEach(b => globalBaseSum += b.rmssd);
+            let globalAvg = globalBaseSum / baselines.length;
+
+            baselines.forEach(b => {
+                const bDate = new Date(b.date).toDateString();
+                const matchedSleep = sleep.find(s => {
+                   const sDate = new Date(s.date);
+                   return sDate.toDateString() === bDate || (new Date(bDate).getTime() - sDate.getTime() < 86400000);
+                });
+                if(matchedSleep && matchedSleep.tags) {
+                    matchedSleep.tags.forEach(tag => {
+                        if(!tagImpacts[tag]) tagImpacts[tag] = { sum: 0, count: 0 };
+                        tagImpacts[tag].sum += b.rmssd; tagImpacts[tag].count++;
+                    });
+                }
+            });
+
+            let worstTag = null; let maxDrop = 0;
+            Object.keys(tagImpacts).forEach(tag => {
+                if(tagImpacts[tag].count >= 2) { 
+                    const tagAvg = tagImpacts[tag].sum / tagImpacts[tag].count;
+                    if(tagAvg < globalAvg) {
+                        const drop = ((globalAvg - tagAvg)/globalAvg)*100;
+                        if(drop > maxDrop) { maxDrop = drop; worstTag = tag; }
+                    }
+                }
+            });
+
+            if(worstTag && maxDrop > 5) {
+                 insightEl.innerHTML = `Data reveals that when you tag <strong>'${worstTag}'</strong>, your Morning Readiness drops by an average of <strong>${Math.round(maxDrop)}%</strong> compared to your baseline.`;
+                 return;
+            }
+        }
+        
+        const today = new Date().toDateString(), todayBaselines = baselines.filter(h => new Date(h.date).toDateString() === today); 
+        if (todayBaselines.length > 0 && sleep.length > 0) { 
+            const lastSleep = sleep[0], latestRMSSD = todayBaselines[0].rmssd; 
+            if (lastSleep.quality <= 2 && latestRMSSD > 40) insightEl.innerHTML = `You reported poor sleep (${lastSleep.quality}/5), but your morning HRV (<strong>${latestRMSSD}</strong>) shows your nervous system is actually quite resilient today.`; 
+            else if (lastSleep.quality >= 4 && latestRMSSD < 30) insightEl.innerHTML = `You slept well, but your HRV is suppressed today (<strong>${latestRMSSD}</strong>). Consider a Wind Down session.`; 
+            else insightEl.innerHTML = `Sleep quality (${lastSleep.quality}/5) matches your nervous system readiness (HRV: <strong>${latestRMSSD}</strong>). Keep up the consistency.`; 
+        } else { 
+            insightEl.innerHTML = `Log a <strong>Morning Readiness</strong> baseline to start comparing it against your sleep logs.`; 
+        } 
+    }
 
     // RF FINDER LOGIC
     let isRfMode = false, rfRunning = false, rfStepIndex = 0, rfStepIbis = [], rfAmplitudes = [];
@@ -702,23 +954,23 @@
     function advanceRfStep() { const amp = ibiAmplitude(rfStepIbis); rfAmplitudes.push(amp); rfStepIbis = []; updateRfStepDisplay(); rfStepIndex++; if (rfStepIndex >= RF_STEPS.length) { finishRfAssessment(); } else { rfRunning = true; if (audioEnabled) { AudioEngine.restart(60 / RF_STEPS[rfStepIndex], [0.5, 0.0, 0.5, 0.0]); } document.getElementById('rf-status-text').textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — settling…`; setTimeout(() => { if (rfRunning) document.getElementById('rf-status-text').textContent = `Step ${rfStepIndex + 1}: ${RF_STEPS[rfStepIndex]} BPM — measuring`; }, 30000); } }
     function finishRfAssessment() { rfRunning = false; const winnerIdx = rfAmplitudes.indexOf(Math.max(...rfAmplitudes)), winnerBpm = RF_STEPS[winnerIdx]; document.getElementById(`rf-step-${winnerIdx}`).classList.add('winner'); document.getElementById(`rf-bar-${winnerIdx}`).style.background='var(--coh-high)'; savedRf=winnerBpm; localStorage.setItem('kw_rf', winnerBpm.toString()); targetBpm=winnerBpm; document.getElementById('slider-bpm').value=winnerBpm; document.getElementById('val-bpm').textContent=`${winnerBpm.toFixed(1)} bpm`; document.getElementById('rf-status-text').textContent=`Done! ${winnerBpm.toFixed(1)} BPM saved as your Focus setting.`; document.getElementById('btn-rf-action').textContent='Close'; document.getElementById('btn-rf-action').onclick=() => { stopSession(false); closeSheet('rfSheet'); resetRfModal(); }; }
     function resetRfModal() { rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; rfRunning=false; isRfMode=false; document.getElementById('rf-progress-bar-fill').style.width='0%'; document.getElementById('rf-status-text').textContent='Place finger over camera and press Start.'; document.getElementById('btn-rf-action').textContent='Start Assessment'; document.getElementById('btn-rf-action').onclick=startRfAssessment; buildRfStepDisplay(); }
-    async function startRfAssessment() { if (rfRunning) return; isRfMode = true; rfRunning = true; document.getElementById('btn-rf-action').disabled = true; document.getElementById('btn-rf-action').style.opacity = '0.5'; rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; document.getElementById('rf-status-text').textContent='Starting camera…'; try { await startSession(false); document.getElementById('rf-status-text').textContent = `Step 1: ${RF_STEPS[0]} BPM — settling (30s)…`; updateRfStepDisplay(); } catch(e) { document.getElementById('rf-status-text').textContent='Camera error.'; rfRunning = false; } finally { document.getElementById('btn-rf-action').disabled = false; document.getElementById('btn-rf-action').style.opacity = '1'; } }
+    async function startRfAssessment() { if (rfRunning) return; isRfMode = true; rfRunning = true; document.getElementById('btn-rf-action').disabled = true; document.getElementById('btn-rf-action').style.opacity = '0.5'; rfStepIndex=0; rfStepIbis=[]; rfAmplitudes=[]; document.getElementById('rf-status-text').textContent='Starting camera…'; try { await startSession('train'); document.getElementById('rf-status-text').textContent = `Step 1: ${RF_STEPS[0]} BPM — settling (30s)…`; updateRfStepDisplay(); } catch(e) { document.getElementById('rf-status-text').textContent='Camera error.'; rfRunning = false; } finally { document.getElementById('btn-rf-action').disabled = false; document.getElementById('btn-rf-action').style.opacity = '1'; } }
 
     // BINDINGS
     const openSheet = id => { document.getElementById(id).classList.add('open'); ui.overlay.classList.add('open'); };
     const closeSheet = id => { document.getElementById(id).classList.remove('open'); ui.overlay.classList.remove('open'); };
-    ui.btnMain.addEventListener('click', () => startSession(false));
+    ui.btnMain.addEventListener('click', () => startSession('train'));
     ui.btnAudio.addEventListener('click', () => { audioEnabled = !audioEnabled; ui.btnAudio.classList.toggle('active', audioEnabled); ui.audioWaves.style.display = audioEnabled ? 'block' : 'none'; if(!audioEnabled) AudioEngine.disconnect(); });
     ui.btnSettings.addEventListener('click', () => openSheet('settingsSheet'));
-    ui.overlay.addEventListener('click', () => { closeSheet('settingsSheet'); closeSheet('summarySheet'); if(!isSessionActive) closeSheet('rfSheet'); });
+    ui.overlay.addEventListener('click', () => { closeSheet('settingsSheet'); closeSheet('summarySheet'); if(!document.body.classList.contains('session-active')) closeSheet('rfSheet'); });
     document.getElementById('saveSettingsBtn').addEventListener('click', () => closeSheet('settingsSheet'));
     document.getElementById('slider-bpm').addEventListener('input', e => { targetBpm = parseFloat(e.target.value); document.getElementById('val-bpm').textContent = `${targetBpm.toFixed(1)} bpm`; });
     document.getElementById('btn-open-rf').addEventListener('click', () => { closeSheet('settingsSheet'); resetRfModal(); openSheet('rfSheet'); });
-    document.getElementById('btn-rf-cancel').addEventListener('click', () => { if(isSessionActive) stopSession(false); closeSheet('rfSheet'); resetRfModal(); });
+    document.getElementById('btn-rf-cancel').addEventListener('click', () => { if(document.body.classList.contains('session-active')) stopSession(false); closeSheet('rfSheet'); resetRfModal(); });
 
     // INIT
     let savedRf = parseFloat(localStorage.getItem('kw_rf') || '6.0'); targetBpm = savedRf; document.getElementById('slider-bpm').value = savedRf; document.getElementById('val-bpm').textContent = `${savedRf.toFixed(1)} bpm`;
-    renderHistory(); generateInsights(); resizeCanvases(); resetRfModal();
+    renderHistory(); generateInsights(); renderGamification(); resizeCanvases(); resetRfModal();
   </script>
 </body>
 </html>
