@@ -401,7 +401,9 @@
         
         <div class="pill-group" id="protocol-pills">
           <button class="pill-btn active" data-proto="resonant">Focus</button>
-          <button class="pill-btn" data-proto="relax">Wind Down (4-7-8)</button>
+          <button class="pill-btn" data-proto="box">Box (4-4-4-4)</button>
+          <button class="pill-btn" data-proto="calm">Calm (4-2-6)</button>
+          <button class="pill-btn" data-proto="relax">Relax (4-7-8)</button>
           <button class="pill-btn" data-proto="energize">Energize</button>
         </div>
         <button class="btn-main" id="btn-main">
@@ -560,9 +562,11 @@
     });
 
     const PROTOCOLS = {
-      resonant:  { name: "Focus",      bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
-      relax:     { name: "Wind Down",  bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
-      energize:  { name: "Energize",   bpm: 20.0, phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
+      resonant:  { name: "Focus",          bpm: 6.0,  phases: [0.4, 0.0, 0.6, 0.0], customBpm: true },
+      box:       { name: "Box (4-4-4-4)",  bpm: 3.75, phases: [0.25, 0.25, 0.25, 0.25], customBpm: false },
+      calm:      { name: "Calm (4-2-6)",   bpm: 5.0,  phases: [4/12, 2/12, 6/12, 0.0], customBpm: false },
+      relax:     { name: "Relax (4-7-8)",  bpm: 3.15, phases: [4/19, 7/19, 8/19, 0.0], customBpm: false },
+      energize:  { name: "Energize",       bpm: 20.0, phases: [0.5, 0.0, 0.5, 0.0], customBpm: false }
     };
 
     const AudioEngine = (function () {
