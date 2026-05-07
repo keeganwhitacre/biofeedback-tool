@@ -83,18 +83,17 @@
     body:has(.overlay.open) { overflow: hidden; }
 
     /* ── ROUTING LOGIC ── */
-.app-view { 
-  display: none; 
-  flex: 1; 
-  flex-direction: column; 
-  /* Unlock the view so it can handle content taller than the screen */
-  overflow-y: auto; 
-  position: relative; 
-  z-index: 10; 
-  -webkit-overflow-scrolling: touch; 
-  scrollbar-width: none; 
-}
-.app-view::-webkit-scrollbar { display: none; }
+    .app-view { 
+      display: none; 
+      flex: 1; 
+      flex-direction: column; 
+      overflow-y: auto; 
+      position: relative; 
+      z-index: 10; 
+      -webkit-overflow-scrolling: touch; 
+      scrollbar-width: none; 
+    }
+    .app-view::-webkit-scrollbar { display: none; }
     #trainView { display: flex; } 
     body.assess-mode #trainView, body.assess-mode #trendsView { display: none !important; }
     body.assess-mode #assessView { display: flex !important; }
@@ -163,50 +162,41 @@
     .pulse-node.today { border-color: var(--text-3); }
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
-.train-content-wrapper { 
-  /* min-height ensures it fills the screen for centering, 
-     but can grow taller to allow scrolling */
-  min-height: 100%; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  /* 180px provides a safe buffer so the "Begin" button 
-     never sits behind the glass nav bar */
-  padding: 40px 20px 180px; 
-  width: 100%;
-  box-sizing: border-box;
-}
+    .train-content-wrapper { 
+      min-height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: flex-start;
+      padding: 10px 20px 120px; 
+      width: 100%;
+      box-sizing: border-box;
+    }
 
-/* This centers the pacer only when there is extra vertical space.
-   When the screen is short, it will stack naturally and remain scrollable. */
-.train-focus-zone { 
-  flex: 1; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  width: 100%;
-  min-height: 400px; /* Ensures the pacer doesn't collapse */
-}
+    .train-focus-zone { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      width: 100%;
+      min-height: 280px; 
+    }
 
-.controls-zone { 
-  width: 100%; 
-  max-width: 340px; 
-  /* Keeps the controls at the bottom of the wrapper */
-  margin-top: 40px; 
-}
-    /* Hide scrollbars but keep functionality */
-.app-view::-webkit-scrollbar { display: none; }
-.app-view { -ms-overflow-style: none; scrollbar-width: none; }
+    .controls-zone { 
+      width: 100%; 
+      max-width: 340px; 
+      margin-top: 16px; 
+    }
 
     body.session-active .train-focus-zone { transform: scale(1.02); }
     body.session-active .glass-nav-wrap { transform: translateY(120px); opacity: 0; }
     body.session-active .header-top { opacity: 0.2; pointer-events: none; transition: opacity 0.4s;}
 
-    .pacer-container { position: relative; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
-    .pacer-ring { position: absolute; width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--border-md); box-shadow: 0 0 0px rgba(0,0,0,0); transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease; will-change: transform; }
+    .pacer-container { position: relative; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .pacer-ring { position: absolute; width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--border-md); box-shadow: 0 0 0px rgba(0,0,0,0); transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease; will-change: transform; }
     .pacer-content { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    .live-bpm { font-size: 72px; font-weight: 200; line-height: 1; font-family: ui-monospace, monospace; letter-spacing: -2px; transition: opacity 0.3s; color: var(--text-1); }
+    .live-bpm { font-size: 64px; font-weight: 200; line-height: 1; font-family: ui-monospace, monospace; letter-spacing: -2px; transition: opacity 0.3s; color: var(--text-1); }
     .live-bpm.dim { opacity: 0.2; }
     .pacer-instruction { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--text-3); margin-top: 8px; transition: color 1s ease; }
 
@@ -513,7 +503,7 @@
   <div class="glass-nav-wrap">
     <nav class="glass-panel">
       <div class="nav-slot"><button class="nav-btn tab-btn" data-tab="assess"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></button><div class="nav-dot"></div></div>
-      <div class="nav-slot"><button class="nav-btn tab-btn active" data-tab="train"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></button><div class="nav-dot"></div></div>
+      <div class="nav-slot"><button class="nav-btn tab-btn active" data-tab="train"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></button><div class="nav-dot"></div></div>
       <div class="nav-slot"><button class="nav-btn tab-btn" data-tab="trends"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-5 5"/></svg></button><div class="nav-dot"></div></div>
     </nav>
   </div>
@@ -575,8 +565,13 @@
       </div>
     </div>
 
-    <!-- AI Result container -->
-    <div id="ai-analysis-result" style="display:none; font-size: 14px; color: var(--text-1); background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 24px; margin-top: 16px; text-align: left; line-height: 1.5; border: 1px solid var(--border-md);"></div>
+    <!-- AI Context Input & Result container -->
+    <div id="ai-context-section" style="margin-top: 16px;">
+        <div class="sheet-label" style="margin-top: 0;">Session Context (Optional)</div>
+        <input type="text" id="ai-context-input" class="settings-inp" placeholder="e.g. sitting by lake, anxious, post-workout" style="margin-bottom: 12px; font-family: inherit; font-size: 14px;">
+    </div>
+    
+    <div id="ai-analysis-result" style="display:none; font-size: 14px; color: var(--text-1); background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 24px; margin-top: 8px; text-align: left; line-height: 1.5; border: 1px solid var(--border-md);"></div>
     
     <div style="display:flex; flex-direction: column; gap: 12px; margin-top: 24px;">
         <button class="sheet-btn" id="btn-analyze-summary" style="margin-top:0; background: var(--bg-canvas); border: 1px solid var(--accent); color: var(--accent);">Analyze Session with AI ✨</button>
@@ -1055,6 +1050,7 @@
         aiResultEl.style.display = 'none';
         aiBtn.style.display = 'block';
         aiBtn.textContent = 'Analyze Session with AI ✨';
+        document.getElementById('ai-context-input').value = ''; // Reset context string
 
         deltaEl.style.display = 'none'; document.getElementById('summary-title').textContent = "Session Complete";
         document.getElementById('session-tags-section').style.display = 'block';
@@ -1148,6 +1144,8 @@
     document.getElementById('btn-analyze-summary').addEventListener('click', async () => {
       const resultEl = document.getElementById('ai-analysis-result');
       const btn = document.getElementById('btn-analyze-summary');
+      const contextText = document.getElementById('ai-context-input').value.trim();
+      
       resultEl.style.display = 'block';
       resultEl.innerHTML = '<div class="spinner" style="width:20px;height:20px;border:2.5px solid var(--border-md);border-top-color:var(--accent);margin:0 auto;"></div>';
       btn.style.display = 'none';
@@ -1161,18 +1159,19 @@
       if(currentMode === 'orthostatic') protoName = 'Orthostatic Test';
       if(currentMode === 'free') protoName = 'Free Capture';
 
-      // Downsample to save context window tokens
-      const downsampled = latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/30) === 0);
+      // Send the FULL data array (capped safely at 2000 so it doesn't crash browser, but covers almost any normal session length)
+      const ibiDataToSend = latestSessionIbis.length > 2000 ? latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/2000) === 0) : latestSessionIbis;
+      const contextSnippet = contextText ? `\nUser Context Note: "${contextText}"` : '';
 
-      const prompt = `Act as an expert physiologist. Analyze this biofeedback session:
+      const prompt = `Act as an expert physiologist and biofeedback coach. Analyze this session:
       Protocol: ${protoName}
       Duration: ${sessionDuration} seconds
       Starting BPM: ${Math.round(startBpm)}
       Ending BPM: ${Math.round(endBpm)}
-      RMSSD (HRV): ${Math.round(rmssd)}
-      Sampled IBIs (ms): ${downsampled.join(', ')}
+      RMSSD (HRV): ${Math.round(rmssd)}${contextSnippet}
+      Sampled IBIs (ms) for entire session: [${ibiDataToSend.join(', ')}]
 
-      Provide a short, 2-3 sentence analysis of how their nervous system responded. Point out if it's a good response or if signs of fatigue are present. Keep it conversational and directly address the user.`;
+      Based on the raw IBI tachogram and the context provided, analyze how their nervous system responded. Provide a 2-3 sentence analysis. Is there a healthy physiological response or signs of sympathetic dominance/fatigue? Be insightful, conversational, and directly address the user.`;
 
       try {
         const text = await callGemini(prompt);
@@ -1194,9 +1193,10 @@
       if(currentMode === 'orthostatic') protoName = 'Orthostatic Test';
       if(currentMode === 'free') protoName = 'Free Capture';
       
-      const downsampledIbis = latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/50) === 0);
+      // Save full array to history instead of heavily downsampled array (capped at 2000 to save localStorage space)
+      const dataToSave = latestSessionIbis.length > 2000 ? latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/2000) === 0) : latestSessionIbis;
 
-      history.unshift({ date: new Date().toISOString(), duration: sessionDuration, protocol: protoName, tags: Array.from(sessionTags), rmssd: Math.round(rmssd), bpm: Math.round(ibiHistory[ibiHistory.length-1].bpm), ibis: downsampledIbis });
+      history.unshift({ date: new Date().toISOString(), duration: sessionDuration, protocol: protoName, tags: Array.from(sessionTags), rmssd: Math.round(rmssd), bpm: Math.round(ibiHistory[ibiHistory.length-1].bpm), ibis: dataToSave });
       localStorage.setItem('kw_history', JSON.stringify(history));
       document.getElementById('charts-card').style.display = 'block';
       renderHistory(); generateInsights(); renderGamification(); closeSheet('summarySheet');
