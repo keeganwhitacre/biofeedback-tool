@@ -152,7 +152,20 @@
     .pulse-node.today { border-color: var(--text-3); }
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
-    .train-content-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px 100px; width: 100%;}
+    /* ── TRAIN TAB (BIOFEEDBACK) ── */
+.train-content-wrapper { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  padding: 0 20px 130px; /* Increased bottom padding to clear the nav bar */
+  width: 100%;
+  overflow-y: auto;      /* Enables scrolling on shorter screens */
+  scrollbar-width: none; /* Hides scrollbar in Firefox */
+}
+.train-content-wrapper::-webkit-scrollbar { 
+  display: none;         /* Hides scrollbar in Chrome/Safari */
+}
     .train-focus-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 20; transition: transform 0.4s ease; padding: 10px 0; width: 100%; }
     
     body.session-active .train-focus-zone { transform: scale(1.02); }
