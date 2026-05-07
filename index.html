@@ -83,7 +83,16 @@
     body:has(.overlay.open) { overflow: hidden; }
 
     /* ── ROUTING LOGIC ── */
-    .app-view { display: none; flex: 1; flex-direction: column; overflow: hidden; position: relative; z-index: 10; }
+.app-view { 
+  display: none; 
+  flex: 1; 
+  flex-direction: column; 
+  /* Change overflow to auto to allow the tab itself to scroll */
+  overflow-y: auto; 
+  position: relative; 
+  z-index: 10; 
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+}
     #trainView { display: flex; } 
     body.assess-mode #trainView, body.assess-mode #trendsView { display: none !important; }
     body.assess-mode #assessView { display: flex !important; }
@@ -152,17 +161,20 @@
     .pulse-node.today { border-color: var(--text-3); }
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
-    /* ── TRAIN TAB (BIOFEEDBACK) ── */
 .train-content-wrapper { 
-  flex: 1; 
+  /* Use min-height instead of flex: 1 so it can grow taller than the screen */
+  min-height: 100%; 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
-  padding: 0 20px 130px; /* Increased bottom padding to clear the nav bar */
+  /* 140px ensures the "Begin Training" button clears the glass nav bar entirely */
+  padding: 20px 20px 140px; 
   width: 100%;
-  overflow-y: auto;      /* Enables scrolling on shorter screens */
-  scrollbar-width: none; /* Hides scrollbar in Firefox */
+  box-sizing: border-box;
 }
+    /* Hide scrollbars but keep functionality */
+.app-view::-webkit-scrollbar { display: none; }
+.app-view { -ms-overflow-style: none; scrollbar-width: none; }
 .train-content-wrapper::-webkit-scrollbar { 
   display: none;         /* Hides scrollbar in Chrome/Safari */
 }
@@ -670,7 +682,7 @@
 
       for (let i = 0; i <= maxRetries; i++) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${activeKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
