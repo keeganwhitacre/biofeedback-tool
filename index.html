@@ -87,12 +87,14 @@
   display: none; 
   flex: 1; 
   flex-direction: column; 
-  /* Change overflow to auto to allow the tab itself to scroll */
+  /* Unlock the view so it can handle content taller than the screen */
   overflow-y: auto; 
   position: relative; 
   z-index: 10; 
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+  -webkit-overflow-scrolling: touch; 
+  scrollbar-width: none; 
 }
+.app-view::-webkit-scrollbar { display: none; }
     #trainView { display: flex; } 
     body.assess-mode #trainView, body.assess-mode #trendsView { display: none !important; }
     body.assess-mode #assessView { display: flex !important; }
@@ -162,24 +164,41 @@
 
     /* ── TRAIN TAB (BIOFEEDBACK) ── */
 .train-content-wrapper { 
-  /* Use min-height instead of flex: 1 so it can grow taller than the screen */
+  /* min-height ensures it fills the screen for centering, 
+     but can grow taller to allow scrolling */
   min-height: 100%; 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
-  /* 140px ensures the "Begin Training" button clears the glass nav bar entirely */
-  padding: 20px 20px 140px; 
+  /* 180px provides a safe buffer so the "Begin" button 
+     never sits behind the glass nav bar */
+  padding: 40px 20px 180px; 
   width: 100%;
   box-sizing: border-box;
+}
+
+/* This centers the pacer only when there is extra vertical space.
+   When the screen is short, it will stack naturally and remain scrollable. */
+.train-focus-zone { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  width: 100%;
+  min-height: 400px; /* Ensures the pacer doesn't collapse */
+}
+
+.controls-zone { 
+  width: 100%; 
+  max-width: 340px; 
+  /* Keeps the controls at the bottom of the wrapper */
+  margin-top: 40px; 
 }
     /* Hide scrollbars but keep functionality */
 .app-view::-webkit-scrollbar { display: none; }
 .app-view { -ms-overflow-style: none; scrollbar-width: none; }
-.train-content-wrapper::-webkit-scrollbar { 
-  display: none;         /* Hides scrollbar in Chrome/Safari */
-}
-    .train-focus-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 20; transition: transform 0.4s ease; padding: 10px 0; width: 100%; }
-    
+
     body.session-active .train-focus-zone { transform: scale(1.02); }
     body.session-active .glass-nav-wrap { transform: translateY(120px); opacity: 0; }
     body.session-active .header-top { opacity: 0.2; pointer-events: none; transition: opacity 0.4s;}
@@ -216,7 +235,6 @@
     .beat-flash.flash { opacity: 1; }
 
     /* Controls & Pills */
-    .controls-zone { width: 100%; max-width: 340px; margin-top: auto; position: relative; z-index: 20; }
     .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 4px; font-weight: 500;}
     
     .pill-group { display: flex; background: var(--bg-input); border-radius: 12px; padding: 4px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
