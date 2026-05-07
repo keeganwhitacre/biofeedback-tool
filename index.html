@@ -171,6 +171,7 @@
       padding: 10px 20px 120px; 
       width: 100%;
       box-sizing: border-box;
+      transition: padding 0.5s cubic-bezier(0.16,1,0.3,1);
     }
 
     .train-focus-zone { 
@@ -181,17 +182,50 @@
       justify-content: center; 
       width: 100%;
       min-height: 280px; 
+      transition: transform 0.4s ease;
     }
 
     .controls-zone { 
       width: 100%; 
       max-width: 340px; 
       margin-top: 16px; 
+      display: flex;
+      flex-direction: column;
     }
 
-    body.session-active .train-focus-zone { transform: scale(1.02); }
-    body.session-active .glass-nav-wrap { transform: translateY(120px); opacity: 0; }
-    body.session-active .header-top { opacity: 0.2; pointer-events: none; transition: opacity 0.4s;}
+    /* SESSION ACTIVE DYNAMICS */
+    body.session-active .train-content-wrapper { 
+      padding-bottom: 32px; /* Remove the massive bottom padding when nav bar disappears */
+      padding-top: 24px;
+    }
+    body.session-active .train-focus-zone { 
+      transform: scale(1.02); 
+    }
+    body.session-active .glass-nav-wrap { 
+      transform: translateY(120px); 
+      opacity: 0; 
+    }
+    body.session-active .header-top { 
+      opacity: 0.15; 
+      pointer-events: none; 
+      transition: opacity 0.4s;
+    }
+
+    /* Collapsible Controls Container */
+    .pre-session-controls {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-height: 300px;
+      opacity: 1;
+      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease, margin 0.4s ease;
+    }
+    body.session-active .pre-session-controls {
+      max-height: 0;
+      opacity: 0;
+      margin: 0;
+      pointer-events: none;
+    }
 
     .pacer-container { position: relative; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
     .pacer-ring { position: absolute; width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--border-md); box-shadow: 0 0 0px rgba(0,0,0,0); transition: transform 0.1s linear, border-color 1s ease, box-shadow 1s ease; will-change: transform; }
@@ -225,13 +259,14 @@
     .beat-flash.flash { opacity: 1; }
 
     /* Controls & Pills */
-    .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-family: ui-monospace, monospace; color: var(--text-3); margin-bottom: 4px; font-weight: 500;}
+    .status-row { display: flex; justify-content: center; align-items: center; margin-bottom: 16px; }
+    #session-time { font-size: 16px; font-weight: 600; font-family: ui-monospace, monospace; color: var(--text-3); transition: all 0.3s ease; }
+    body.session-active #session-time { font-size: 22px; color: var(--text-1); font-weight: 700; letter-spacing: 1px;}
     
     .pill-group { display: flex; background: var(--bg-input); border-radius: 12px; padding: 4px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
     .pill-group::-webkit-scrollbar { display: none; }
     .pill-btn { flex: 0 0 auto; min-width: 30%; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); text-align: center; cursor: pointer; transition: all 0.2s; border: none; background: transparent; }
     .pill-btn.active { background: var(--bg-surface); color: var(--text-1); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-    body.session-active .pill-group { opacity: 0.3; pointer-events: none; }
 
     .btn-main { width: 100%; height: 56px; border-radius: 28px; border: none; background: var(--text-1); color: var(--bg-canvas); font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s, opacity 0.2s, background 0.3s; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
     .btn-main:active { transform: scale(0.97); }
@@ -438,24 +473,31 @@
       </div>
 
       <div class="controls-zone">
+        <!-- Persistent Session Time -->
         <div class="status-row">
           <span id="session-time">00:00</span>
         </div>
-        <div class="goal-text"><span>Weekly Target</span><span id="weekly-goal-text">0 / 60 Min</span></div>
-        <div class="goal-progress-wrap" style="margin-bottom: 24px;"><div class="goal-progress-fill" id="weekly-goal-fill"></div></div>
-        
-        <div style="display:flex; flex-direction:column; align-items:center; width:100%; margin-bottom:12px;">
-           <button id="btn-suggest-protocol" style="background:transparent; border:1px solid var(--border-md); color:var(--text-2); border-radius:20px; padding:6px 16px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">✨ Suggest Protocol</button>
-           <div id="ai-protocol-suggestion" style="display:none; font-size:12px; color:var(--text-3); margin-top:8px; text-align:center;"></div>
+
+        <!-- Collapsible Pre-Session Controls -->
+        <div class="pre-session-controls">
+            <div class="goal-text"><span>Weekly Target</span><span id="weekly-goal-text">0 / 60 Min</span></div>
+            <div class="goal-progress-wrap" style="margin-bottom: 24px;"><div class="goal-progress-fill" id="weekly-goal-fill"></div></div>
+            
+            <div style="display:flex; flex-direction:column; align-items:center; width:100%; margin-bottom:12px;">
+               <button id="btn-suggest-protocol" style="background:transparent; border:1px solid var(--border-md); color:var(--text-2); border-radius:20px; padding:6px 16px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">✨ Suggest Protocol</button>
+               <div id="ai-protocol-suggestion" style="display:none; font-size:12px; color:var(--text-3); margin-top:8px; text-align:center;"></div>
+            </div>
+
+            <div class="pill-group" id="protocol-pills">
+              <button class="pill-btn active" data-proto="resonant">Focus</button>
+              <button class="pill-btn" data-proto="box">Box (4-4-4-4)</button>
+              <button class="pill-btn" data-proto="calm">Calm (4-2-6)</button>
+              <button class="pill-btn" data-proto="relax">Relax (4-7-8)</button>
+              <button class="pill-btn" data-proto="energize">Energize</button>
+            </div>
         </div>
 
-        <div class="pill-group" id="protocol-pills">
-          <button class="pill-btn active" data-proto="resonant">Focus</button>
-          <button class="pill-btn" data-proto="box">Box (4-4-4-4)</button>
-          <button class="pill-btn" data-proto="calm">Calm (4-2-6)</button>
-          <button class="pill-btn" data-proto="relax">Relax (4-7-8)</button>
-          <button class="pill-btn" data-proto="energize">Energize</button>
-        </div>
+        <!-- Action Button -->
         <button class="btn-main" id="btn-main">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Begin Training
         </button>
