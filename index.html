@@ -253,6 +253,14 @@
     .sheet-btn:active { opacity: 0.8; }
     .sheet-btn.primary { background: var(--accent); color: #fff; }
 
+    /* Custom Settings Input */
+    .settings-inp { width: 100%; box-sizing: border-box; background: var(--bg-canvas); border: 0.5px solid var(--border); border-radius: 12px; color: var(--text-1); font-size: 16px; font-weight: 500; padding: 14px 16px; margin-bottom: 16px; font-family: ui-monospace, monospace; transition: border-color 0.2s; }
+    .settings-inp:focus { border-color: var(--accent); outline: none; }
+    
+    /* Loading Spinner */
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spinner { border: 2px solid var(--border-md); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+
     /* RF Specific */
     .rf-step-display { display: flex; justify-content: space-around; margin-bottom: 16px; }
     .rf-step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -263,6 +271,10 @@
     .rf-step-item.winner .rf-step-bpm { color: var(--coh-high); font-weight: 700; }
     .rf-step-item.winner .rf-step-bar-fill { background: var(--coh-high); }
     #hidden-stage { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
+
+    /* Toast */
+    .toast { position: fixed; top: calc(20px + var(--safe-top)); left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--text-1); color: var(--bg-canvas); font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 99px; white-space: nowrap; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .toast.open { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body class="train-mode">
@@ -399,6 +411,11 @@
         <div class="goal-text"><span>Weekly Target</span><span id="weekly-goal-text">0 / 60 Min</span></div>
         <div class="goal-progress-wrap" style="margin-bottom: 24px;"><div class="goal-progress-fill" id="weekly-goal-fill"></div></div>
         
+        <div style="display:flex; flex-direction:column; align-items:center; width:100%; margin-bottom:12px;">
+           <button id="btn-suggest-protocol" style="background:transparent; border:1px solid var(--border-md); color:var(--text-2); border-radius:20px; padding:6px 16px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">✨ Suggest Protocol</button>
+           <div id="ai-protocol-suggestion" style="display:none; font-size:12px; color:var(--text-3); margin-top:8px; text-align:center;"></div>
+        </div>
+
         <div class="pill-group" id="protocol-pills">
           <button class="pill-btn active" data-proto="resonant">Focus</button>
           <button class="pill-btn" data-proto="box">Box (4-4-4-4)</button>
@@ -426,9 +443,10 @@
           </div>
         </div>
         
-        <div class="card">
-          <div class="card-label">Daily Insights Engine</div>
-          <div class="insight-text" id="daily-insight">Logging sleep data and Morning Readiness baselines will reveal correlations between your habits and your recovery.</div>
+        <div class="card" id="ai-coach-card">
+          <div class="card-label">AI Coach <span id="ai-coach-status" style="font-size:10px; font-weight:normal; color:var(--text-3);"></span></div>
+          <div class="insight-text" id="ai-daily-insight">Add your Gemini API key in settings to unlock personalized readiness insights.</div>
+          <button class="btn-secondary" id="btn-refresh-ai-coach" style="display:none; margin-top:16px; padding:10px; font-size:13px; background:var(--bg-canvas);">Refresh Insight</button>
         </div>
         
         <div class="card" id="charts-card" style="display:none;">
@@ -467,6 +485,11 @@
       <div class="theme-swatch" data-theme="light" style="width:60px; height:40px; border-radius:8px; background:#fff; border:2px solid var(--border); cursor:pointer;"></div>
       <div class="theme-swatch" data-theme="dark" style="width:60px; height:40px; border-radius:8px; background:#1c1c1e; border:2px solid var(--border); cursor:pointer;"></div>
     </div>
+
+    <div class="sheet-label">AI Integration</div>
+    <input type="password" id="set-gemini-key" class="settings-inp" placeholder="Gemini API Key (Optional)" spellcheck="false" autocomplete="off">
+    <div style="font-size: 12px; color: var(--text-3); margin-top: -8px; margin-bottom: 24px;">Add an API key to enable personalized AI session analysis and daily coaching.</div>
+
     <div class="sheet-label">Focus Protocol (Resonant)</div>
     <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:600; margin-bottom:8px;"><span>Custom BPM</span><span id="val-bpm" style="font-family:ui-monospace, monospace; color:var(--accent);">6.0 bpm</span></div>
     <input type="range" id="slider-bpm" min="4.5" max="6.5" step="0.5" value="6.0" style="margin-bottom: 16px;">
@@ -508,8 +531,12 @@
         <div class="s-chip" data-tag="Deep Work">Deep Work</div><div class="s-chip" data-tag="Anxious">Anxious</div><div class="s-chip" data-tag="Pre-Bed">Pre-Bed</div><div class="s-chip" data-tag="Post-Workout">Post-Workout</div>
       </div>
     </div>
+
+    <!-- AI Result container -->
+    <div id="ai-analysis-result" style="display:none; font-size: 14px; color: var(--text-1); background: var(--bg-input); padding: 16px; border-radius: 12px; margin-bottom: 24px; margin-top: 16px; text-align: left; line-height: 1.5; border: 1px solid var(--border-md);"></div>
     
     <div style="display:flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+        <button class="sheet-btn" id="btn-analyze-summary" style="margin-top:0; background: var(--bg-canvas); border: 1px solid var(--accent); color: var(--accent);">Analyze Session with AI ✨</button>
         <button class="sheet-btn primary" id="btn-save-summary" style="margin-top:0;">Save to History</button>
         <div style="display: flex; gap: 12px;">
             <button class="sheet-btn" id="btn-export-csv" style="flex:1; margin-top:0; background: var(--bg-input); color: var(--text-1);">Export CSV</button>
@@ -517,6 +544,8 @@
         </div>
     </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <!-- MOCK ePATCore for Web Demo Constraints (Delete if using actual library) -->
   <script>
@@ -549,6 +578,14 @@
         const t = e.currentTarget.dataset.theme; document.documentElement.setAttribute('data-theme', t); localStorage.setItem('kw_theme_v3', t);
       });
     });
+
+    let toastTmr;
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.classList.add('open');
+      clearTimeout(toastTmr);
+      toastTmr = setTimeout(() => el.classList.remove('open'), 2500);
+    }
 
     const viewTitles = { assess: "Assess", train: "Biofeedback", trends: "Trends" };
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -597,6 +634,53 @@
         stop() { clearTimeout(cycleTimer); this.disconnect(); setTimeout(() => { if (actx) actx.suspend(); }, 300); }
       };
     })();
+
+    // ── GEMINI AI INTEGRATION ──
+    const environmentFallbackKey = "";
+    async function callGemini(prompt, schema = null) {
+      const userKey = localStorage.getItem('kw_gemini_key') || '';
+      const activeKey = userKey || environmentFallbackKey;
+      if (!activeKey) throw new Error('no_key');
+
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3 }
+      };
+      
+      if (schema) {
+        payload.generationConfig.responseMimeType = "application/json";
+        payload.generationConfig.responseSchema = schema;
+      }
+
+      const maxRetries = 5;
+      let delay = 1000;
+
+      for (let i = 0; i <= maxRetries; i++) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${activeKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            if (i === maxRetries) throw new Error('API request failed');
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+            continue;
+          }
+
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (!text) throw new Error('Empty response');
+          return schema ? JSON.parse(text) : text;
+        } catch (err) {
+          if (i === maxRetries) throw err;
+          await new Promise(r => setTimeout(r, delay));
+          delay *= 2;
+        }
+      }
+    }
 
     // GLOBAL STATE
     let currentMode = 'train', audioEnabled = false; 
@@ -892,7 +976,7 @@
 
       if (typeof window.ePATCore !== 'undefined') {
         try { await window.ePATCore.WakeLockCtrl.request(); await window.ePATCore.BeatDetector.start({ video: document.getElementById('video-feed'), canvas: document.getElementById('sampling-canvas'), onBeatCb: handleBeat, onFingerChangeCb: handleFingerChange, onPPGSampleCb: handlePPGSample, onSqiUpdateCb: handleSQI });
-        } catch(err) { console.error(err); stopSession(); alert("Camera permission required."); return; }
+        } catch(err) { console.error(err); stopSession(); toast("Camera permission required."); return; }
       }
       sessionStartTime=performance.now();
       if(audioEnabled && currentMode === 'train' && !isRfMode) { AudioEngine.init(); const pDef = PROTOCOLS[activeProtocol]; AudioEngine.connect(60 / (pDef.customBpm ? targetBpm : pDef.bpm), pDef.phases); }
@@ -921,7 +1005,14 @@
         const s1 = document.getElementById('sum-stat1'), l1 = document.getElementById('sum-lbl1');
         const s2 = document.getElementById('sum-stat2'), l2 = document.getElementById('sum-lbl2');
         const interpEl = document.getElementById('summary-interpretation');
+        const aiResultEl = document.getElementById('ai-analysis-result');
+        const aiBtn = document.getElementById('btn-analyze-summary');
+        
         interpEl.textContent = ''; // Reset interpretation
+        aiResultEl.style.display = 'none';
+        aiBtn.style.display = 'block';
+        aiBtn.textContent = 'Analyze Session with AI ✨';
+
         deltaEl.style.display = 'none'; document.getElementById('summary-title').textContent = "Session Complete";
         document.getElementById('session-tags-section').style.display = 'block';
 
@@ -1010,6 +1101,46 @@
       });
     });
 
+    // ── AI SUMMARY ANALYSIS ──
+    document.getElementById('btn-analyze-summary').addEventListener('click', async () => {
+      const resultEl = document.getElementById('ai-analysis-result');
+      const btn = document.getElementById('btn-analyze-summary');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = '<div class="spinner" style="width:20px;height:20px;border:2.5px solid var(--border-md);border-top-color:var(--accent);margin:0 auto;"></div>';
+      btn.style.display = 'none';
+
+      const rmssd = computeRMSSD(latestSessionIbis);
+      const startBpm = ibiHistory[0]?.bpm || 0;
+      const endBpm = ibiHistory[ibiHistory.length-1]?.bpm || 0;
+      let protoName = PROTOCOLS[activeProtocol].name;
+      if(currentMode === 'baseline') protoName = 'Morning Baseline';
+      if(currentMode === 'hrr') protoName = 'Cardio Recovery';
+      if(currentMode === 'orthostatic') protoName = 'Orthostatic Test';
+      if(currentMode === 'free') protoName = 'Free Capture';
+
+      // Downsample to save context window tokens
+      const downsampled = latestSessionIbis.filter((_,i) => i % Math.ceil(latestSessionIbis.length/30) === 0);
+
+      const prompt = `Act as an expert physiologist. Analyze this biofeedback session:
+      Protocol: ${protoName}
+      Duration: ${sessionDuration} seconds
+      Starting BPM: ${Math.round(startBpm)}
+      Ending BPM: ${Math.round(endBpm)}
+      RMSSD (HRV): ${Math.round(rmssd)}
+      Sampled IBIs (ms): ${downsampled.join(', ')}
+
+      Provide a short, 2-3 sentence analysis of how their nervous system responded. Point out if it's a good response or if signs of fatigue are present. Keep it conversational and directly address the user.`;
+
+      try {
+        const text = await callGemini(prompt);
+        resultEl.innerHTML = text.replace(/\n/g, '<br>');
+      } catch (e) {
+        resultEl.innerHTML = e.message === 'no_key' ? 'Please add your Gemini API Key in Settings to enable AI Analysis.' : 'Analysis failed. Check your connection or API key.';
+        btn.style.display = 'block';
+        btn.textContent = 'Try Again';
+      }
+    });
+
     document.getElementById('btn-save-summary').addEventListener('click', () => {
       const rmssd = computeRMSSD(latestSessionIbis);
       const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
@@ -1037,6 +1168,47 @@
         closeSheet('summarySheet');
     });
 
+    // ── AI PROTOCOL SUGGESTION ──
+    document.getElementById('btn-suggest-protocol').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-suggest-protocol');
+      const resEl = document.getElementById('ai-protocol-suggestion');
+      btn.textContent = "Thinking...";
+      resEl.style.display = 'none';
+
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]');
+      const lastBase = history.find(h => h.protocol === 'Morning Baseline');
+      const lastSleep = sleep[0];
+
+      const prompt = `Based on this user's latest data, suggest ONE breathing protocol for right now.
+      Protocols available: "resonant" (Focus, 6 BPM), "box" (Balance, 4-4-4-4), "calm" (De-stress, 4-2-6), "relax" (Sleep prep, 4-7-8), "energize" (Awake, 20 BPM).
+      Latest Baseline RMSSD: ${lastBase ? lastBase.rmssd : 'Unknown'}.
+      Latest Sleep: ${lastSleep ? lastSleep.hours + ' hrs, Quality ' + lastSleep.quality + '/5' : 'Unknown'}.
+
+      Choose the best protocol. Provide the protocol ID and a 1-sentence conversational reason.`;
+
+      const schema = {
+        type: "OBJECT",
+        properties: {
+          protocol_id: { type: "STRING" },
+          reason: { type: "STRING" }
+        },
+        required: ["protocol_id", "reason"]
+      };
+
+      try {
+        const result = await callGemini(prompt, schema);
+        document.querySelector(`.pill-btn[data-proto="${result.protocol_id}"]`)?.click();
+        resEl.textContent = `✨ ${result.reason}`;
+        resEl.style.display = 'block';
+        btn.textContent = "✨ Suggest Protocol";
+      } catch(e) {
+        btn.textContent = "✨ Suggest Protocol";
+        resEl.textContent = e.message === 'no_key' ? "Add your Gemini API Key in Settings first." : "Could not fetch suggestion.";
+        resEl.style.display = 'block';
+      }
+    });
+
     // ASSESS TAB
     document.getElementById('btn-readiness').addEventListener('click', () => { document.querySelector('[data-tab="train"]').click(); startSession('baseline'); });
     document.getElementById('btn-hrr').addEventListener('click', () => { document.querySelector('[data-tab="train"]').click(); startSession('hrr'); });
@@ -1051,7 +1223,70 @@
     document.querySelectorAll('#sleep-tags .s-chip').forEach(chip => { chip.addEventListener('click', (e) => { const t = e.currentTarget; t.classList.toggle('active'); if(t.classList.contains('active')) sleepTags.add(t.dataset.tag); else sleepTags.delete(t.dataset.tag); }); });
     document.getElementById('btn-save-sleep').addEventListener('click', () => { const logs = JSON.parse(localStorage.getItem('kw_sleep') || '[]'); logs.unshift({ date: new Date().toISOString(), hours: sleepHours.value, quality: activeStars, tags: Array.from(sleepTags) }); localStorage.setItem('kw_sleep', JSON.stringify(logs)); generateInsights(); const btn = document.getElementById('btn-save-sleep'); btn.textContent = 'Saved!'; setTimeout(()=>btn.textContent='Save Sleep Log', 2000); });
 
-    // TRENDS TAB
+    // TRENDS TAB & AI COACH
+    async function fetchAICoach() {
+      const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
+      const sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]');
+      const el = document.getElementById('ai-daily-insight');
+      const statusEl = document.getElementById('ai-coach-status');
+
+      const baselines = history.filter(h => h.protocol === 'Morning Baseline').slice(0, 7);
+      const recentSleep = sleep.slice(0, 3);
+      const recentSessions = history.filter(h => h.protocol !== 'Morning Baseline').slice(0, 5);
+
+      if (baselines.length === 0 && recentSleep.length === 0) {
+         el.textContent = "Log some Morning Baselines and Sleep to unlock AI insights.";
+         document.getElementById('btn-refresh-ai-coach').style.display = 'none';
+         return;
+      }
+
+      const cached = JSON.parse(localStorage.getItem('kw_ai_insight') || 'null');
+      const todayStr = new Date().toDateString();
+      if (cached && cached.date === todayStr) {
+         el.innerHTML = `<strong>${cached.headline}</strong><br><br>${cached.insight}`;
+         document.getElementById('btn-refresh-ai-coach').style.display = 'block';
+         return;
+      }
+
+      statusEl.textContent = "Analyzing...";
+      const prompt = `Act as a physiological biofeedback coach. 
+      Analyze the user's recent data:
+      Morning Baselines (last 7): ${JSON.stringify(baselines.map(b => ({date: new Date(b.date).toDateString(), rmssd: b.rmssd, bpm: b.bpm, tags: b.tags})))}
+      Recent Sleep: ${JSON.stringify(recentSleep.map(s => ({date: new Date(s.date).toDateString(), hours: s.hours, quality: s.quality, tags: s.tags})))}
+      Recent Training: ${JSON.stringify(recentSessions.map(s => ({protocol: s.protocol, rmssd: s.rmssd, duration: s.duration})))}
+
+      Are they recovering well? Is sleep affecting their HRV? What should they focus on today?`;
+
+      const schema = {
+        type: "OBJECT",
+        properties: {
+          headline: { type: "STRING", description: "Short, punchy summary (e.g., 'Recovery is climbing')" },
+          insight: { type: "STRING", description: "2-3 sentences of actionable physiological advice based on the data." }
+        },
+        required: ["headline", "insight"]
+      };
+
+      try {
+        const result = await callGemini(prompt, schema);
+        localStorage.setItem('kw_ai_insight', JSON.stringify({date: todayStr, headline: result.headline, insight: result.insight}));
+        el.innerHTML = `<strong>${result.headline}</strong><br><br>${result.insight}`;
+        statusEl.textContent = "";
+        document.getElementById('btn-refresh-ai-coach').style.display = 'block';
+      } catch (e) {
+        statusEl.textContent = "";
+        if (e.message === 'no_key') {
+           el.textContent = "Add your Gemini API key in Settings to unlock AI Insights.";
+        } else {
+           el.textContent = "Unable to fetch AI insight right now.";
+        }
+      }
+    }
+
+    document.getElementById('btn-refresh-ai-coach').addEventListener('click', () => {
+      localStorage.removeItem('kw_ai_insight'); // Clear cache
+      fetchAICoach();
+    });
+
     function renderHistory() { 
         const history = JSON.parse(localStorage.getItem('kw_history') || '[]'); 
         const list = document.getElementById('history-list'); 
@@ -1072,57 +1307,7 @@
     }
 
     function generateInsights() { 
-        const history = JSON.parse(localStorage.getItem('kw_history') || '[]');
-        const sleep = JSON.parse(localStorage.getItem('kw_sleep') || '[]'); 
-        const insightEl = document.getElementById('daily-insight'); 
-        if (!history.length) return; 
-
-        const baselines = history.filter(h => h.protocol === 'Morning Baseline');
-        if(baselines.length > 2 && sleep.length > 0) {
-            let tagImpacts = {}; let globalBaseSum = 0;
-            baselines.forEach(b => globalBaseSum += b.rmssd);
-            let globalAvg = globalBaseSum / baselines.length;
-
-            baselines.forEach(b => {
-                const bDate = new Date(b.date).toDateString();
-                const matchedSleep = sleep.find(s => {
-                   const sDate = new Date(s.date);
-                   return sDate.toDateString() === bDate || (new Date(bDate).getTime() - sDate.getTime() < 86400000);
-                });
-                if(matchedSleep && matchedSleep.tags) {
-                    matchedSleep.tags.forEach(tag => {
-                        if(!tagImpacts[tag]) tagImpacts[tag] = { sum: 0, count: 0 };
-                        tagImpacts[tag].sum += b.rmssd; tagImpacts[tag].count++;
-                    });
-                }
-            });
-
-            let worstTag = null; let maxDrop = 0;
-            Object.keys(tagImpacts).forEach(tag => {
-                if(tagImpacts[tag].count >= 2) { 
-                    const tagAvg = tagImpacts[tag].sum / tagImpacts[tag].count;
-                    if(tagAvg < globalAvg) {
-                        const drop = ((globalAvg - tagAvg)/globalAvg)*100;
-                        if(drop > maxDrop) { maxDrop = drop; worstTag = tag; }
-                    }
-                }
-            });
-
-            if(worstTag && maxDrop > 5) {
-                 insightEl.innerHTML = `Data reveals that when you tag <strong>'${worstTag}'</strong>, your Morning Readiness drops by an average of <strong>${Math.round(maxDrop)}%</strong> compared to your baseline.`;
-                 return;
-            }
-        }
-        
-        const today = new Date().toDateString(), todayBaselines = baselines.filter(h => new Date(h.date).toDateString() === today); 
-        if (todayBaselines.length > 0 && sleep.length > 0) { 
-            const lastSleep = sleep[0], latestRMSSD = todayBaselines[0].rmssd; 
-            if (lastSleep.quality <= 2 && latestRMSSD > 40) insightEl.innerHTML = `You reported poor sleep (${lastSleep.quality}/5), but your morning HRV (<strong>${latestRMSSD}</strong>) shows your nervous system is actually quite resilient today.`; 
-            else if (lastSleep.quality >= 4 && latestRMSSD < 30) insightEl.innerHTML = `You slept well, but your HRV is suppressed today (<strong>${latestRMSSD}</strong>). Consider a Wind Down session.`; 
-            else insightEl.innerHTML = `Sleep quality (${lastSleep.quality}/5) matches your nervous system readiness (HRV: <strong>${latestRMSSD}</strong>). Keep up the consistency.`; 
-        } else { 
-            insightEl.innerHTML = `Log a <strong>Morning Readiness</strong> baseline to start comparing it against your sleep logs.`; 
-        } 
+        fetchAICoach(); // Hook in the AI coach here
     }
 
     // RF FINDER LOGIC
@@ -1148,12 +1333,19 @@
     ui.btnAudio.addEventListener('click', () => { audioEnabled = !audioEnabled; ui.btnAudio.classList.toggle('active', audioEnabled); ui.audioWaves.style.display = audioEnabled ? 'block' : 'none'; if(!audioEnabled) AudioEngine.disconnect(); });
     ui.btnSettings.addEventListener('click', () => openSheet('settingsSheet'));
     ui.overlay.addEventListener('click', () => { closeSheet('settingsSheet'); closeSheet('summarySheet'); if(!document.body.classList.contains('session-active')) closeSheet('rfSheet'); });
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => closeSheet('settingsSheet'));
+    
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+        localStorage.setItem('kw_gemini_key', document.getElementById('set-gemini-key').value.trim());
+        closeSheet('settingsSheet');
+        fetchAICoach(); // Attempt to fetch immediately if key was added
+    });
+    
     document.getElementById('slider-bpm').addEventListener('input', e => { targetBpm = parseFloat(e.target.value); document.getElementById('val-bpm').textContent = `${targetBpm.toFixed(1)} bpm`; });
     document.getElementById('btn-open-rf').addEventListener('click', () => { closeSheet('settingsSheet'); resetRfModal(); openSheet('rfSheet'); });
     document.getElementById('btn-rf-cancel').addEventListener('click', () => { if(document.body.classList.contains('session-active')) stopSession(false); closeSheet('rfSheet'); resetRfModal(); });
 
     // INIT
+    const savedGeminiKey = localStorage.getItem('kw_gemini_key') || ''; document.getElementById('set-gemini-key').value = savedGeminiKey;
     let savedRf = parseFloat(localStorage.getItem('kw_rf') || '6.0'); targetBpm = savedRf; document.getElementById('slider-bpm').value = savedRf; document.getElementById('val-bpm').textContent = `${savedRf.toFixed(1)} bpm`;
     renderHistory(); generateInsights(); renderGamification(); resizeCanvases(); resetRfModal();
   </script>
